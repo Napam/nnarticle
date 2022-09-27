@@ -319,17 +319,37 @@ def visualize_strengths_animated():
 
     circles = []
     circletexts = []
-    for pos, color, name in zip([(-0.75, 0.75), (-0.75, 0), (-0.75, -0.75)], colors, ['Appleness', 'Orangeness', 'Pearness']):
-        circle = patches.Circle(pos, 0.30, color=color)
+    nnradius = 0.3
+    for pos, color, name in zip([(-1.25, 0.75), (-1.25, 0), (-1.25, -0.75)], colors, ['Appleness', 'Orangeness', 'Pearness']):
+        circle = patches.Circle(pos, nnradius, facecolor=color, edgecolor='k')
         ax2.add_patch(circle)
         circles.append(circle)
-        circletexts.append(ax2.annotate('0', xy=pos, fontsize=14, ha="center", va="center"))
-        ax2.annotate(f"{name}:", xy=(pos[0] - 2, pos[1]), fontsize=14, va="center")
+        circletexts.append(ax2.annotate('0', xy=pos, fontsize=12, ha="center", va="center"))
+        ax2.annotate(f"{name}", xy=(pos[0] + 0.5, pos[1]), fontsize=14, va="center")
 
-    currclasstext = ax2.annotate("Current prediction", xy=(1, 0.75), fontsize=14)
-    currclasscircle = patches.Circle((2, 0), 0.5, color='orange')
+    ax2.annotate("Current classification", xy=(1, 0.75), fontsize=14)
+    currclasscircle = patches.Circle((2, 0), 0.6, facecolor='orange', edgecolor='k')
     currclasstext = ax2.annotate("", xy=(2, 0), ha="center", va="center", fontsize=16)
     ax2.add_patch(currclasscircle)
+
+    xcircle = patches.Circle((pos[0] - 1.25, 0.375), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
+    ycircle = patches.Circle((pos[0] - 1.25, -0.375), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
+    ax2.add_patch(xcircle)
+    ax2.add_patch(ycircle)
+    xtext = ax2.annotate('', (pos[0] - 1.25, 0.375), ha="center", va="center", fontsize=12)
+    ytext = ax2.annotate('', (pos[0] - 1.25, -0.375), ha="center", va="center", fontsize=12)
+    ax2.annotate('Weight', (pos[0] - 1.75, 0.375), ha="right", va="center", fontsize=14)
+    ax2.annotate('Diameter', (pos[0] - 1.75, -0.375), ha="right", va="center", fontsize=14)
+
+    temp = np.array([xcircle.get_center(), circles[0].get_center()])
+    temp[0] = temp[0] + ((temp[1] - temp[0]) / np.linalg.norm(temp[1] - temp[0])) * nnradius
+    temp[1] = temp[1] - ((temp[1] - temp[0]) / np.linalg.norm(temp[1] - temp[0])) * nnradius
+    ax2.add_line(plt.Line2D(*temp.T))
+
+    temp = np.array([xcircle.get_center(), circles[1].get_center()])
+    temp[0] = temp[0] + ((temp[1] - temp[0]) / np.linalg.norm(temp[1] - temp[0])) * nnradius
+    temp[1] = temp[1] - ((temp[1] - temp[0]) / np.linalg.norm(temp[1] - temp[0])) * nnradius
+    ax2.add_line(plt.Line2D(*temp.T))
 
     def forward(X, intercepts, slopes):
         z = intercepts + X @ slopes.T
@@ -341,20 +361,22 @@ def visualize_strengths_animated():
     def step(i):
         point[0, 0] = centerx + 20 * math.cos(i * 0.004)
         point[0, 1] = centery + 5 * math.sin(i * 0.004)
+        xtext.set_text(f"{point[0, 0]:.1f}")
+        ytext.set_text(f"{point[0, 1]:.1f}")
         strengths = forward(point, uintercepts, uslopes)[0]
         scatter.set_offsets(point)
         for strength, line, quiver, circle, circletext in zip(strengths, lines, quivers, circles, circletexts):
             line.set_linewidth(max(strength * 20, 1))
             quiver.scale = max((1 - strength) * 0.1, 0.05)
             circletext.set_text(f"{strength:.2f}")
-            circle.set_alpha(strength)
+            circle.set_facecolor((*circle.get_facecolor()[:3], strength))
 
         currclass = np.argmax(strengths)
-        currclasscircle.set_color(colors[currclass])
+        currclasscircle.set_facecolor(colors[currclass])
         currclasstext.set_text(classes[currclass])
 
         # (not i % 20) and sys.stdout.write(f"\x1b[JAppleness: {strengths[0]}\nOrangeness: {strengths[1]}\nPearness: {strengths[2]}\n\x1b[3A")
-        return (scatter, *lines, *quivers, *circletexts, *circles, currclasstext, currclasscircle)
+        return (scatter, *lines, *quivers, *circletexts, *circles, currclasstext, currclasscircle, xtext, ytext)
 
     ax1.set_xlabel("Weight (g)")
     ax1.set_ylabel("Diameter (cm)")
