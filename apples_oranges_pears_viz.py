@@ -319,17 +319,17 @@ def visualize_strengths_animated():
 
     circles = []
     circletexts = []
-    nnradius = 0.3
-    for pos, color, name in zip([(-1.25, 0.75), (-1.25, 0), (-1.25, -0.75)], colors, ['Appleness', 'Orangeness', 'Pearness']):
+    nnradius = 0.32
+    for pos, color, name in zip([(-1.5, 0.75), (-1.5, 0), (-1.5, -0.75)], colors, ['Appleness', 'Orangeness', 'Pearness']):
         circle = patches.Circle(pos, nnradius, facecolor=color, edgecolor='k')
         ax2.add_patch(circle)
         circles.append(circle)
         circletexts.append(ax2.annotate('0', xy=pos, fontsize=12, ha="center", va="center"))
         ax2.annotate(f"{name}", xy=(pos[0] + 0.5, pos[1]), fontsize=14, va="center")
 
-    ax2.annotate("Current classification", xy=(1, 0.75), fontsize=14)
-    currclasscircle = patches.Circle((2, 0), 0.6, facecolor='orange', edgecolor='k')
-    currclasstext = ax2.annotate("", xy=(2, 0), ha="center", va="center", fontsize=16)
+    ax2.annotate("Current classification", xy=(2.25, 0.75), fontsize=14, ha="center")
+    currclasscircle = patches.Circle((2.25, 0), 0.6, facecolor='orange', edgecolor='k')
+    currclasstext = ax2.annotate("", xy=(2.25, 0), ha="center", va="center", fontsize=16)
     ax2.add_patch(currclasscircle)
 
     xcircle = patches.Circle((pos[0] - 1.25, 0.375), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
@@ -341,15 +341,15 @@ def visualize_strengths_animated():
     ax2.annotate('Weight', (pos[0] - 1.75, 0.375), ha="right", va="center", fontsize=14)
     ax2.annotate('Diameter', (pos[0] - 1.75, -0.375), ha="right", va="center", fontsize=14)
 
-    temp = np.array([xcircle.get_center(), circles[0].get_center()])
-    temp[0] = temp[0] + ((temp[1] - temp[0]) / np.linalg.norm(temp[1] - temp[0])) * nnradius
-    temp[1] = temp[1] - ((temp[1] - temp[0]) / np.linalg.norm(temp[1] - temp[0])) * nnradius
-    ax2.add_line(plt.Line2D(*temp.T))
-
-    temp = np.array([xcircle.get_center(), circles[1].get_center()])
-    temp[0] = temp[0] + ((temp[1] - temp[0]) / np.linalg.norm(temp[1] - temp[0])) * nnradius
-    temp[1] = temp[1] - ((temp[1] - temp[0]) / np.linalg.norm(temp[1] - temp[0])) * nnradius
-    ax2.add_line(plt.Line2D(*temp.T))
+    # Edges
+    for left_circle in (xcircle, ycircle):
+        for right_circle in circles:
+            temp = np.array([left_circle.get_center(), right_circle.get_center()])
+            diff = temp[1] - temp[0]
+            thing = (diff / np.linalg.norm(diff)) * nnradius
+            temp[0] = temp[0] + thing
+            temp[1] = temp[1] - thing
+            ax2.add_line(plt.Line2D(*temp.T, color='k', linewidth=1))
 
     def forward(X, intercepts, slopes):
         z = intercepts + X @ slopes.T
@@ -384,7 +384,7 @@ def visualize_strengths_animated():
     ax1.set_ylim(*y_lim)
     ax1.set_aspect('equal')
 
-    # ax2.axis('off')
+    ax2.axis('off')
     ax2.set_aspect('equal')
     ax2.set_xlim(-5, 5)
     ax2.set_ylim(-1.25, 1.25)
