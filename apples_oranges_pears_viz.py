@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib import patches
 import math
+from tqdm import tqdm
 
 from utils import get_lims, plot_hyperplane, unnormalize_plane, unnormalize_planes
 plt.rcParams.update({'font.family': 'serif', 'mathtext.fontset': 'dejavuserif'})
@@ -36,17 +37,30 @@ def visualize_data_set():
 def visualize_data_set_with_orange_line():
     plt.xlabel("Weight (g)")
     plt.ylabel("Diameter (cm)")
-    plt.title("Comparing apples, oranges and pears")
+    plt.title("Comparing apples, oranges and pears with a single decision boundary")
     plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
     plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
     plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+
+    intercept = -0.014510540291666985
+    xslope = 1.6574535
+    yslope = 0.6743076
+
+    m = [135.7327, 6.8051]
+    s = [6.5687, 2.1522]
+
+    xspace = torch.linspace(x_lim[0], x_lim[1], 4)
+    intercept_, xslope_, yslope_ = unnormalize_plane(m, s, intercept, xslope, yslope)
+    plot_hyperplane(xspace, intercept_, xslope_, yslope_, 10, c='k', alpha=0.75, quiver_kwargs={
+                    'units': 'dots', 'width': 1.75, 'scale': 0.075, 'scale_units': 'dots'})
+
     plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
     plt.gca().set_aspect('equal')
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
-    plt.savefig("figures/apples_oranges_pears.pdf")
+    plt.savefig("figures/apples_oranges_pears_with_orange_line.pdf")
     plt.clf()
 
 
@@ -294,6 +308,10 @@ def visualize_strengths_animated():
 
     fig, (ax1, ax2) = plt.subplots(2, 1)
 
+    ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
+    ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
+    ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
+
     lines = []
     quivers = []
     xspace = np.linspace(x_lim[0], x_lim[1], 4)
@@ -320,26 +338,30 @@ def visualize_strengths_animated():
     circles = []
     circletexts = []
     nnradius = 0.32
-    for pos, color, name in zip([(-1.5, 0.75), (-1.5, 0), (-1.5, -0.75)], colors, ['Appleness', 'Orangeness', 'Pearness']):
+    nodesy = 0
+    nodesx = -1.5
+    yspacing = 0.75
+    for pos, color, name in zip([(nodesx, nodesy + yspacing), (nodesx, nodesy), (nodesx, nodesy - yspacing)], colors, ['Appleness', 'Orangeness', 'Pearness']):
         circle = patches.Circle(pos, nnradius, facecolor=color, edgecolor='k')
         ax2.add_patch(circle)
         circles.append(circle)
         circletexts.append(ax2.annotate('0', xy=pos, fontsize=12, ha="center", va="center"))
         ax2.annotate(f"{name}", xy=(pos[0] + 0.5, pos[1]), fontsize=14, va="center")
 
-    ax2.annotate("Current classification", xy=(2.25, 0.75), fontsize=14, ha="center")
-    currclasscircle = patches.Circle((2.25, 0), 0.6, facecolor='orange', edgecolor='k')
-    currclasstext = ax2.annotate("", xy=(2.25, 0), ha="center", va="center", fontsize=16)
+    ax2.annotate("Current classification", xy=(nodesx + 3.75, nodesy + yspacing), fontsize=14, ha="center")
+    currclasscircle = patches.Circle((nodesx + 3.75, nodesy), 0.6, facecolor='orange', edgecolor='k')
+    currclasstext = ax2.annotate("", xy=(nodesx + 3.75, 0), ha="center", va="center", fontsize=16)
     ax2.add_patch(currclasscircle)
 
-    xcircle = patches.Circle((pos[0] - 1.25, 0.375), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
-    ycircle = patches.Circle((pos[0] - 1.25, -0.375), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
+    ax2.annotate("Model graph", (pos[0] - 1.25, nodesy + 1.3), va="center", fontsize=14)
+    xcircle = patches.Circle((nodesx - 1.25, nodesy + yspacing / 2), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
+    ycircle = patches.Circle((nodesx - 1.25, nodesy - yspacing / 2), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
     ax2.add_patch(xcircle)
     ax2.add_patch(ycircle)
-    xtext = ax2.annotate('', (pos[0] - 1.25, 0.375), ha="center", va="center", fontsize=12)
-    ytext = ax2.annotate('', (pos[0] - 1.25, -0.375), ha="center", va="center", fontsize=12)
-    ax2.annotate('Weight', (pos[0] - 1.75, 0.375), ha="right", va="center", fontsize=14)
-    ax2.annotate('Diameter', (pos[0] - 1.75, -0.375), ha="right", va="center", fontsize=14)
+    xtext = ax2.annotate('', (nodesx - 1.25, nodesy + yspacing / 2), ha="center", va="center", fontsize=12)
+    ytext = ax2.annotate('', (nodesx - 1.25, nodesy - yspacing / 2), ha="center", va="center", fontsize=12)
+    ax2.annotate('Weight', (nodesx - 1.75, nodesy + yspacing / 2), ha="right", va="center", fontsize=14)
+    ax2.annotate('Diameter', (nodesx - 1.75, nodesy - yspacing / 2), ha="right", va="center", fontsize=14)
 
     # Edges
     for left_circle in (xcircle, ycircle):
@@ -358,9 +380,14 @@ def visualize_strengths_animated():
         z = z / z.sum()
         return z
 
+    n = 300
+    pi2 = np.pi * 2
+    pbar = tqdm(total=n)
+
     def step(i):
-        point[0, 0] = centerx + 20 * math.cos(i * 0.004)
-        point[0, 1] = centery + 5 * math.sin(i * 0.004)
+        rad = i / n * pi2
+        point[0, 0] = centerx + 20 * math.cos(rad)
+        point[0, 1] = centery + 5 * math.sin(rad)
         xtext.set_text(f"{point[0, 0]:.1f}")
         ytext.set_text(f"{point[0, 1]:.1f}")
         strengths = forward(point, uintercepts, uslopes)[0]
@@ -374,6 +401,7 @@ def visualize_strengths_animated():
         currclass = np.argmax(strengths)
         currclasscircle.set_facecolor(colors[currclass])
         currclasstext.set_text(classes[currclass])
+        pbar.update(1)
 
         # (not i % 20) and sys.stdout.write(f"\x1b[JAppleness: {strengths[0]}\nOrangeness: {strengths[1]}\nPearness: {strengths[2]}\n\x1b[3A")
         return (scatter, *lines, *quivers, *circletexts, *circles, currclasstext, currclasscircle, xtext, ytext)
@@ -387,19 +415,22 @@ def visualize_strengths_animated():
     ax2.axis('off')
     ax2.set_aspect('equal')
     ax2.set_xlim(-5, 5)
-    ax2.set_ylim(-1.25, 1.25)
+    ax2.set_ylim(-1.25, 1.3)
 
     fig.suptitle("Strengths")
-    fig.set_figheight(6)
+    fig.set_figheight(7)
     fig.set_figwidth(10)
     fig.tight_layout()
-    anim = FuncAnimation(fig, step, blit=True, interval=0)
-    plt.show()
+    anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
+    anim.save("figures/strengths.gif", writer="ffmpeg", fps=24)
+    # plt.show()
     plt.clf()
 
 
-# visualize_data_set()
-# visualize_two_lines()
-# visualize_three_lines()
-# visualize_strengths()
-visualize_strengths_animated()
+if __name__ == '__main__':
+    # visualize_data_set_with_orange_line()
+    # visualize_data_set()
+    # visualize_two_lines()
+    # visualize_three_lines()
+    # visualize_strengths()
+    visualize_strengths_animated()

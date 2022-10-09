@@ -72,6 +72,7 @@ def visualize_data_set_with_unknown_point_and_line():
     plt.clf()
 
 
-visualize_data_set()
-visualize_data_set_with_unknown_point()
-visualize_data_set_with_unknown_point_and_line()
+if __name__ == "__main__":
+    visualize_data_set()
+    visualize_data_set_with_unknown_point()
+    visualize_data_set_with_unknown_point_and_line()
