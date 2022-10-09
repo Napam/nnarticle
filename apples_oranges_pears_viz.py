@@ -281,7 +281,7 @@ def visualize_strengths():
     plt.clf()
 
 
-def visualize_strengths_animated():
+def visualize_likelihoods_animated():
     intercepts = np.array([
         -0.08808770030736923,
         -0.09143412113189697,
@@ -417,12 +417,12 @@ def visualize_strengths_animated():
     ax2.set_xlim(-5, 5)
     ax2.set_ylim(-1.25, 1.3)
 
-    fig.suptitle("Strengths")
+    fig.suptitle("Likelihoods of classes")
     fig.set_figheight(7)
     fig.set_figwidth(10)
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    anim.save("figures/strengths.gif", writer="ffmpeg", fps=24)
+    anim.save("figures/likelihoods.gif", writer="ffmpeg", fps=24)
     # plt.show()
     plt.clf()
 
@@ -433,4 +433,4 @@ if __name__ == '__main__':
     # visualize_two_lines()
     # visualize_three_lines()
     # visualize_strengths()
-    visualize_strengths_animated()
+    visualize_likelihoods_animated()
