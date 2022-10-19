@@ -68,9 +68,9 @@ def visualize_two_lines():
     plt.xlabel("Weight (g)")
     plt.ylabel("Diameter (cm)")
     plt.title("Decision boundaries for apples and pears")
-    plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+    plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.2)
+    plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.2)
+    plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.2)
 
     intercept1 = -1.3598535060882568
     xslope1 = -2.9026194
@@ -118,8 +118,8 @@ def visualize_two_lines():
     plt.gca().set_aspect('equal')
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
-    plt.savefig("figures/apples_oranges_pears_two_lines.pdf")
-    # plt.show()
+    # plt.savefig("figures/apples_oranges_pears_two_lines.pdf")
+    plt.show()
     plt.clf()
 
 
@@ -198,7 +198,7 @@ def visualize_three_lines():
     plt.clf()
 
 
-def visualize_strengths():
+def visualize_likelihoods():
     plt.xlabel("Weight (g)")
     plt.ylabel("Diameter (cm)")
     plt.title("Strengths")
@@ -226,15 +226,7 @@ def visualize_strengths():
     point = np.array([[140, 6]])
     plt.scatter(*point.T, label="Unknown", marker="x", c="black", s=60)
 
-    def forward(X, intercepts, slopes):
-        z = intercepts + X @ slopes.T
-        print('LOG:\x1b[33mDEBUG\x1b[0m:', 'z:', z)
-        z = z + abs(z.min())
-        z = z ** 2 / z.sum()
-        return z
-
     strengths = forward(point, uintercepts, uslopes)[0]
-    print('LOG:\x1b[33mDEBUG\x1b[0m:', 'strengths:', strengths)
 
     xspace = torch.linspace(x_lim[0], x_lim[1], 4)
 
@@ -279,6 +271,14 @@ def visualize_strengths():
     plt.savefig("figures/apples_oranges_pears_strengths.pdf")
     # plt.show()
     plt.clf()
+
+
+def forward(X: np.ndarray, intercepts: np.ndarray, slopes: np.ndarray):
+    z = intercepts + X @ slopes.T
+    z = z + abs(z.min())
+    z = z ** 2
+    z = z / z.sum()
+    return z
 
 
 def visualize_likelihoods_animated():
@@ -373,13 +373,6 @@ def visualize_likelihoods_animated():
             temp[1] = temp[1] - thing
             ax2.add_line(plt.Line2D(*temp.T, color='k', linewidth=1))
 
-    def forward(X, intercepts, slopes):
-        z = intercepts + X @ slopes.T
-        z = z + abs(z.min())
-        z = z ** 2
-        z = z / z.sum()
-        return z
-
     n = 300
     pi2 = np.pi * 2
     pbar = tqdm(total=n)
@@ -422,15 +415,60 @@ def visualize_likelihoods_animated():
     fig.set_figwidth(10)
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    anim.save("figures/likelihoods.gif", writer="ffmpeg", fps=24)
-    # plt.show()
+    # anim.save("figures/likelihoods.gif", writer="ffmpeg", fps=24)
+    plt.show()
+    plt.clf()
+
+
+def visualize_appleness_pearness():
+    plt.xlabel("Appleness")
+    plt.ylabel("Pearness")
+    plt.title("Appleness and pearness")
+
+    intercepts = np.array([
+        -0.08808770030736923,
+        -0.09384874999523163
+    ])
+
+    slopes = np.array(
+        [[-0.19972077, -0.03343868],
+         [0.20376714, -0.11762319]]
+    )
+
+    m = np.array([141.8463, 6.2363])
+    s = np.array([10.5088, 1.7896])
+
+    xspace = np.linspace(x_lim[0], x_lim[1], 4)
+    uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
+
+    # outs = forward(X, uintercepts, uslopes)
+    outs = uintercepts + X @ uslopes.T
+    print(outs)
+    # np.clip(outs, 0, np.inf, outs)
+    outs[outs < 0] = 0.08 * outs[outs < 0]
+    print(outs)
+
+    plt.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
+    plt.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
+    plt.scatter(*outs[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+
+    # exit()
+    plt.legend(loc="upper right")
+    # plt.xlim(*x_lim)
+    # plt.ylim(*y_lim)
+    plt.gca().set_aspect('equal')
+    # plt.gcf().set_figheight(10)
+    # plt.gcf().set_figwidth(10)
+    # plt.savefig("figures/apples_oranges_pears_two_lines.pdf")
+    plt.show()
     plt.clf()
 
 
 if __name__ == '__main__':
     # visualize_data_set_with_orange_line()
     # visualize_data_set()
-    # visualize_two_lines()
+    visualize_two_lines()
     # visualize_three_lines()
-    # visualize_strengths()
-    visualize_likelihoods_animated()
+    # visualize_likelihoods()
+    # visualize_likelihoods_animated()
+    # visualize_appleness_pearness()
