@@ -1,0 +1,95 @@
+import torch
+import numpy as np
+import pandas as pd
+from torch import nn
+from torch import optim
+from matplotlib import pyplot as plt
+from torch.nn.functional import one_hot
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
+from utils import get_lims, normalize_data, plot_hyperplane, unnormalize_plane, unnormalize_planes
+
+def accuracy(y_: torch.Tensor, y: torch.Tensor):
+    y_, y = y_.detach(), y.detach()
+    y_ = y_.argmax(1)
+    y = y.argmax(1)
+    return (y_ == y).sum() / len(y)
+
+class ThreeLayerPerceptron(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.hidden = nn.Linear(in_features=2, out_features=2)
+        self.leaky_relu = nn.LeakyReLU(negative_slope=0.1)
+        self.output = nn.Linear(in_features=2, out_features=3)
+        self.softmax = nn.Softmax(1)
+
+    def forward(self, X: torch.Tensor):
+        latent = self.hidden(X)
+        latent = self.leaky_relu(latent)
+        latent = self.output(latent)
+        latent = self.softmax(latent)
+        return latent
+
+    def fit(self, X: torch.tensor, y: torch.tensor):
+        y = y.to(torch.float32)
+        optimizer = optim.Adam(self.parameters(), lr=2e-3, weight_decay=0.01)
+        criterion = nn.CrossEntropyLoss()
+
+        losses = []
+        for i in range(10000):
+            y_ = self.forward(X)
+            loss = criterion(y_, y)
+            print(f"Loss: {loss.item():<25} Accuracy: {accuracy(y_, y).item()}")
+            if losses and torch.allclose(losses[-1], loss, atol=5e-7):
+                print("Achieved satisfactory loss convergence")
+                break
+            losses.append(loss.detach())
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        else:
+            print("Hit maximum iteration")
+
+    def plot(self, X: torch.Tensor, y: torch.Tensor, X_mean: torch.Tensor, X_std: torch.Tensor):
+        X = X.numpy()
+        y = y.numpy()
+        X_mean = X_mean.numpy()
+        X_std = X_std.numpy()
+
+        X = X * X_std + X_mean
+        xspace = np.array([X[:, 0].min() * 0.75, X[:, 0].max() * 1.25])
+
+        hidden_biases, hidden_weights = self.hidden.bias.detach().numpy(), self.hidden.weight.detach().numpy()
+
+        uintercepts, uslopes = unnormalize_planes(X_mean, X_std, hidden_biases, hidden_weights)
+        colors = ['red', 'green']
+        for i, color in enumerate(colors):
+            plot_hyperplane(xspace, uintercepts[i], uslopes[i][0], uslopes[i][1], 16, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2})
+
+
+        plt.scatter(*X.T, c=y)
+
+        xlim, ylim = get_lims(X, padding=0.5)
+        plt.xlim(*xlim)
+        plt.ylim(*ylim)
+        plt.gca().set_aspect('equal')
+        plt.show()
+
+
+
+if __name__ == '__main__':
+    model = ThreeLayerPerceptron()
+
+    df = pd.read_csv("../datasets/apples_oranges_pears.csv")
+    X_raw = torch.tensor(df[["weight", "height"]].values, dtype=torch.float32)
+    y_raw = torch.tensor(df["class"].map({"apple": 0, "orange": 1, "pear": 2}).values, dtype=torch.long)
+
+    X, X_mean, X_std = normalize_data(X_raw)
+    y = one_hot(y_raw)
+
+    model.fit(X, y)
+    model.plot(X, y, X_mean, X_std)
+
