@@ -312,7 +312,6 @@ def visualize_likelihoods_animated():
     ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
     ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
 
-    lines = []
     quivers = []
     xspace = np.linspace(x_lim[0], x_lim[1], 4)
     for i, (label, color) in enumerate(zip(labels, colors)):
@@ -421,18 +420,18 @@ def visualize_likelihoods_animated():
 
 
 def visualize_appleness_pearness():
-    plt.xlabel("Appleness")
-    plt.ylabel("Pearness")
-    plt.title("Appleness and pearness")
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10,5))
+
+
 
     intercepts = np.array([
-        -0.08808770030736923,
-        -0.09384874999523163
+        -0.09384874999523163, # Apple
+        -0.08808770030736923, # Pear
     ])
 
     slopes = np.array(
-        [[-0.19972077, -0.03343868],
-         [0.20376714, -0.11762319]]
+        [[0.20376714, -0.11762319],
+         [-0.19972077, -0.03343868]],
     )
 
     m = np.array([141.8463, 6.2363])
@@ -441,25 +440,49 @@ def visualize_appleness_pearness():
     xspace = np.linspace(x_lim[0], x_lim[1], 4)
     uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
 
-    # outs = forward(X, uintercepts, uslopes)
+    plot_kwargs = {}
+    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 8, 'scale': 0.075, 'scale_units': 'dots'}
+
+    classes = ['Pear', 'Apple']
+    labels = ['Pear boundary', 'Apple boundary']
+    colors = ['forestgreen', 'greenyellow']
+
+    xspace = np.linspace(x_lim[0], x_lim[1], 4)
+    for i, (label, color) in enumerate(zip(labels, colors)):
+        _, artists = plot_hyperplane(
+            xspace,
+            uintercepts[i],
+            *uslopes[i],
+            8,
+            c=color,
+            plot_kwargs={**plot_kwargs, 'label': label},
+            quiver_kwargs=quiver_kwargs,
+            return_artists=True,
+            ax=ax1
+        )
+
+
+
     outs = uintercepts + X @ uslopes.T
-    print(outs)
-    # np.clip(outs, 0, np.inf, outs)
-    outs[outs < 0] = 0.08 * outs[outs < 0]
-    print(outs)
+    outs[outs < 0] = 0.1 * outs[outs < 0]
 
-    plt.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    plt.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    plt.scatter(*outs[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+    ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
+    ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
+    ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
 
-    # exit()
-    plt.legend(loc="upper right")
-    # plt.xlim(*x_lim)
-    # plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
-    # plt.gcf().set_figheight(10)
-    # plt.gcf().set_figwidth(10)
-    # plt.savefig("figures/apples_oranges_pears_two_lines.pdf")
+    ax2.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
+    ax2.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
+    ax2.scatter(*outs[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+
+    ax2.set_xlabel("Pearness")
+    ax2.set_ylabel("Appleness")
+    ax2.set_title("Appleness and pearness")
+
+    ax1.set_aspect('equal')
+    ax2.set_aspect('equal')
+    ax1.set_ylim(*y_lim)
+
+    fig.tight_layout()
     plt.show()
     plt.clf()
 
@@ -467,8 +490,8 @@ def visualize_appleness_pearness():
 if __name__ == '__main__':
     # visualize_data_set_with_orange_line()
     # visualize_data_set()
-    visualize_two_lines()
+    # visualize_two_lines()
     # visualize_three_lines()
     # visualize_likelihoods()
     # visualize_likelihoods_animated()
-    # visualize_appleness_pearness()
+    visualize_appleness_pearness()
