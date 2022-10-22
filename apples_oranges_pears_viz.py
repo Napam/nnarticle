@@ -68,17 +68,17 @@ def visualize_two_lines():
     plt.xlabel("Weight (g)")
     plt.ylabel("Diameter (cm)")
     plt.title("Decision boundaries for apples and pears")
-    plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.2)
-    plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.2)
-    plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.2)
+    plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
+    plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
+    plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
 
-    intercept1 = -1.3598535060882568
-    xslope1 = -2.9026194
-    yslope1 = -0.982407
+    intercept1 = -1.525863
+    xslope1 = -4.1855865
+    yslope1 = -1.2977821
 
-    intercept2 = -1.6127370595932007
-    xslope2 = 3.1835275
-    yslope2 = -1.2765434
+    intercept2 = -1.4590645
+    xslope2 = 3.8890042
+    yslope2 = -1.3885064
 
     m = [141.8463, 6.2363]
     s = [10.5088, 1.7896]
@@ -422,16 +422,14 @@ def visualize_likelihoods_animated():
 def visualize_appleness_pearness():
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10,5))
 
-
-
     intercepts = np.array([
-        -0.09384874999523163, # Apple
-        -0.08808770030736923, # Pear
+        -1.4590645, # Apple
+        -1.525863,  # Pear
     ])
 
     slopes = np.array(
-        [[0.20376714, -0.11762319],
-         [-0.19972077, -0.03343868]],
+        [[3.8890042, -1.3885064],
+         [-4.1855865, -1.2977821]],
     )
 
     m = np.array([141.8463, 6.2363])
@@ -441,19 +439,22 @@ def visualize_appleness_pearness():
     uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
 
     plot_kwargs = {}
-    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 8, 'scale': 0.075, 'scale_units': 'dots'}
+    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 4, 'scale': 0.075, 'scale_units': 'dots'}
 
     classes = ['Pear', 'Apple']
     labels = ['Pear boundary', 'Apple boundary']
     colors = ['forestgreen', 'greenyellow']
 
     xspace = np.linspace(x_lim[0], x_lim[1], 4)
+    ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
+    ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
+    ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
     for i, (label, color) in enumerate(zip(labels, colors)):
         _, artists = plot_hyperplane(
             xspace,
             uintercepts[i],
             *uslopes[i],
-            8,
+            5,
             c=color,
             plot_kwargs={**plot_kwargs, 'label': label},
             quiver_kwargs=quiver_kwargs,
@@ -461,30 +462,31 @@ def visualize_appleness_pearness():
             ax=ax1
         )
 
-
-
     outs = uintercepts + X @ uslopes.T
     outs[outs < 0] = 0.1 * outs[outs < 0]
+    outs = outs / outs.max(0)
 
-    ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+    ax1.set_xlabel('Weight (g)')
+    ax1.set_ylabel('Diameter (cm)')
+    ax1.set_aspect('equal')
+    ax1.set_title('Lines for apples and pears')
+    ax1.set_ylim(*y_lim)
+
 
     ax2.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
     ax2.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
     ax2.scatter(*outs[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
-
     ax2.set_xlabel("Pearness")
     ax2.set_ylabel("Appleness")
     ax2.set_title("Appleness and pearness")
-
-    ax1.set_aspect('equal')
     ax2.set_aspect('equal')
-    ax1.set_ylim(*y_lim)
 
-    fig.tight_layout()
-    plt.show()
+    fig.tight_layout(rect=[0,0,1,0.90])
+    fig.suptitle("Visualizing appleness and pearness for each point")
+    plt.savefig('figures/appleness_pearness.pdf')
+    # plt.show()
     plt.clf()
+
 
 
 if __name__ == '__main__':
