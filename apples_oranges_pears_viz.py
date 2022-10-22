@@ -488,6 +488,92 @@ def visualize_appleness_pearness():
     plt.clf()
 
 
+def visualize_appleness_pearness_out_lines():
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10,5))
+
+    hidden_biases = np.array([
+        -1.4590645, # Pear
+        -1.525863,  # Apple
+    ])
+
+    hidden_weights = np.array(
+        [[3.8890042, -1.3885064],
+         [-4.1855865, -1.2977821]],
+    )
+
+    output_biases = np.array([
+        -1.8697195, # Apple
+        1.5908858,  # Orange
+        -2.0151668, # Pear
+    ])
+
+    output_weights = np.array([
+        [ 3.2594197, -0.6573915],
+        [-2.930492 , -3.0253558],
+        [-0.864902 ,  3.5335188],
+    ])
+
+    m = np.array([141.8463, 6.2363])
+    s = np.array([10.5088, 1.7896])
+
+    uhidden_biases, uhidden_weights = unnormalize_planes(m, s, hidden_biases, hidden_weights)
+
+    plot_kwargs = {}
+    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 4, 'scale': 0.075, 'scale_units': 'dots'}
+
+    classes = ['Pear', 'Apple']
+    labels = ['Pear boundary', 'Apple boundary']
+    colors = ['forestgreen', 'greenyellow']
+
+    xspace = np.linspace(x_lim[0], x_lim[1], 4)
+    ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
+    ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
+    ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+    for i, (label, color) in enumerate(zip(labels, colors)):
+        _ = plot_hyperplane(
+            xspace,
+            uhidden_biases[i],
+            *uhidden_weights[i],
+            5,
+            c=color,
+            plot_kwargs={**plot_kwargs, 'label': label},
+            quiver_kwargs=quiver_kwargs,
+            ax=ax1
+        )
+
+    outs = uhidden_biases + X @ uhidden_weights.T
+    outs[outs < 0] = 0.1 * outs[outs < 0]
+    # outs = outs / outs.max(0)
+
+    ax1.set_xlabel('Weight (g)')
+    ax1.set_ylabel('Diameter (cm)')
+    ax1.set_aspect('equal')
+    ax1.set_title('Lines for apples and pears')
+    ax1.set_ylim(*y_lim)
+
+    ax2.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
+    ax2.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
+    ax2.scatter(*outs[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+    outlims = get_lims(outs)
+    xspace2 = np.linspace(*outlims[0], 10)
+    for i, color in enumerate(['greenyellow', 'forestgreen', 'orange']):
+        plot_hyperplane(xspace2, output_biases[i], *output_weights[i], 10, c=color, ax=ax2, quiver_kwargs=quiver_kwargs)
+
+    ax2.set_xlabel("Pearness")
+    ax2.set_ylabel("Appleness")
+    ax2.set_title("Appleness and pearness")
+    ax2.set_xlim(*outlims[0])
+    ax2.set_ylim(*outlims[1])
+    ax2.set_aspect('equal')
+
+    fig.tight_layout(rect=[0,0,1,0.90])
+    fig.suptitle("Visualizing appleness and pearness for each point")
+    # plt.savefig('figures/appleness_pearness.pdf')
+    plt.show()
+    plt.clf()
+
+
+
 
 if __name__ == '__main__':
     # visualize_data_set_with_orange_line()
@@ -496,4 +582,5 @@ if __name__ == '__main__':
     # visualize_three_lines()
     # visualize_likelihoods()
     # visualize_likelihoods_animated()
-    visualize_appleness_pearness()
+    # visualize_appleness_pearness()
+    visualize_appleness_pearness_out_lines()

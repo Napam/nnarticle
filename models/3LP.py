@@ -95,7 +95,7 @@ class ThreeLayerPerceptron(nn.Module):
         xspace2 = np.array([X_hidden[:, 0].min() * 0.75, X_hidden[:, 0].max() * 1.25])
 
         for i, color in enumerate(colors[:3]):
-            plot_hyperplane(xspace2, output_biases[i], output_weights[i][0], output_weights[i][1], 10, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2}, ax=ax2)
+            plot_hyperplane(xspace2, output_biases[i], *output_weights[i], 10, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2}, ax=ax2)
 
 
         xlim1, ylim1 = get_lims(X, padding=0.5)
