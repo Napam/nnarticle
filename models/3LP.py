@@ -38,7 +38,7 @@ class ThreeLayerPerceptron(nn.Module):
         criterion = nn.CrossEntropyLoss()
 
         losses = []
-        for i in range(10000):
+        for i in range(1000):
             y_ = self.forward(X)
             loss = criterion(y_, y)
             print(f"Loss: {loss.item():<25} Accuracy: {accuracy(y_, y).item()}")
@@ -63,19 +63,22 @@ class ThreeLayerPerceptron(nn.Module):
         xspace = np.array([X[:, 0].min() * 0.75, X[:, 0].max() * 1.25])
 
         hidden_biases, hidden_weights = self.hidden.bias.detach().numpy(), self.hidden.weight.detach().numpy()
-
         uintercepts, uslopes = unnormalize_planes(X_mean, X_std, hidden_biases, hidden_weights)
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+        ax1.scatter(*X.T, c=y)
         colors = ['red', 'green']
         for i, color in enumerate(colors):
-            plot_hyperplane(xspace, uintercepts[i], uslopes[i][0], uslopes[i][1], 16, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2})
+            plot_hyperplane(xspace, uintercepts[i], uslopes[i][0], uslopes[i][1], 16, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2}, ax=ax1)
 
-
-        plt.scatter(*X.T, c=y)
+        X_hidden = self.leaky_relu(torch.tensor(uintercepts + X @ uslopes.T))
+        ax2.scatter(*X_hidden.T, c=y)
 
         xlim, ylim = get_lims(X, padding=0.5)
-        plt.xlim(*xlim)
-        plt.ylim(*ylim)
-        plt.gca().set_aspect('equal')
+        ax1.set_xlim(*xlim)
+        ax1.set_ylim(*ylim)
+        ax1.set_aspect('equal')
         plt.show()
 
 
