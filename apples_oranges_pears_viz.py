@@ -310,6 +310,7 @@ def visualize_likelihoods_animated():
     ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
 
     quivers = []
+    lines = []
     xspace = np.linspace(x_lim[0], x_lim[1], 4)
     for i, (label, color) in enumerate(zip(labels, colors)):
         _, artists = plot_hyperplane(
@@ -578,6 +579,6 @@ if __name__ == '__main__':
     # visualize_two_lines()
     # visualize_three_lines()
     # visualize_likelihoods()
-    # visualize_likelihoods_animated()
-    visualize_appleness_pearness()
-    visualize_appleness_pearness_out_lines()
+    visualize_likelihoods_animated()
+    # visualize_appleness_pearness()
+    # visualize_appleness_pearness_out_lines()
