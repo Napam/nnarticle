@@ -28,13 +28,12 @@ class ThreeLayerPerceptron(nn.Module):
     def __init__(self):
         super().__init__()
         self.hidden = nn.Linear(in_features=2, out_features=2)
-        self.leaky_relu = nn.LeakyReLU(negative_slope=0.1)
         self.output = nn.Linear(in_features=2, out_features=3)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, X: torch.Tensor, return_z1: bool = False):
         z1 = self.hidden(X)
-        h1 = self.leaky_relu(z1)
+        h1 = self.sigmoid(z1)
         z2 = self.output(h1)
         h2 = self.sigmoid(z2)
         out = h2 / h2.sum(1).reshape(-1, 1)
@@ -45,7 +44,6 @@ class ThreeLayerPerceptron(nn.Module):
     def conditioner_criterion(self, y_, y, z1):
         h = torch.sigmoid(z1)
         y_h_ = torch.column_stack([h[:, 0], (h < 0.5).all(1) * (1 - h.sum(1) / 2), h[:, 1]])
-
         return cross_entropy(y_, y) + 3 * mse(y_h_, y)
 
     def fit(self, X: torch.tensor, y: torch.tensor):
@@ -88,15 +86,13 @@ class ThreeLayerPerceptron(nn.Module):
         for i, color in enumerate([colors[0], colors[2]]):
             plot_hyperplane(xspace1, uintercepts[i], uslopes[i][0], uslopes[i][1], 10, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2}, ax=ax1)
 
-
-        X_hidden = self.leaky_relu(torch.tensor(uintercepts + X @ uslopes.T)).detach().numpy()
+        X_hidden = self.sigmoid(torch.tensor(uintercepts + X @ uslopes.T)).detach().numpy()
         ax2.scatter(*X_hidden.T, c=y)
         output_biases, output_weights = self.output.bias.detach().numpy(), self.output.weight.detach().numpy()
         xspace2 = np.array([X_hidden[:, 0].min() * 0.75, X_hidden[:, 0].max() * 1.25])
 
         for i, color in enumerate(colors[:3]):
             plot_hyperplane(xspace2, output_biases[i], *output_weights[i], 10, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2}, ax=ax2)
-
 
         xlim1, ylim1 = get_lims(X, padding=0.5)
         ax1.set_xlim(*xlim1)
