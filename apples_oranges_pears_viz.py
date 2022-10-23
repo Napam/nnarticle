@@ -472,8 +472,8 @@ def visualize_appleness_pearness():
     ax2.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
     ax2.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
     ax2.scatter(*outs[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
-    ax2.set_xlabel("Pearness")
-    ax2.set_ylabel("Appleness")
+    ax2.set_xlabel("Appleness")
+    ax2.set_ylabel("Pearness")
     ax2.set_title("Activation space")
     ax2.set_aspect('equal')
 
@@ -555,8 +555,8 @@ def visualize_appleness_pearness_out_lines():
     for i, (label, color, linestyle) in enumerate(zip(labels, colors, linestyles)):
         plot_hyperplane(xspace2, output_biases[i], *output_weights[i], 6, c=color, ax=ax2, quiver_kwargs=quiver_kwargs, plot_kwargs={'linestyle': linestyle, 'label': label})
 
-    ax2.set_xlabel("Pearness")
-    ax2.set_ylabel("Appleness")
+    ax2.set_xlabel("Appleness")
+    ax2.set_ylabel("Pearness")
     ax2.set_title("Activation space")
     ax2.set_xlim(*outlims[0])
     ax2.set_ylim(*outlims[1])
@@ -569,6 +569,71 @@ def visualize_appleness_pearness_out_lines():
     # plt.show()
     plt.clf()
 
+def visualize_3lp_animated():
+    hidden_biases = np.array([
+        -1.9472151, # Apple
+        -2.260901, # Pear
+    ])
+
+    hidden_weights = np.array([
+        [-4.1687274, -1.3713175],
+        [ 4.5323997, -1.6058096],
+    ])
+
+    output_biases = np.array([
+        -2.0450604, # Apple
+        -2.1543744, # Pear
+        2.6014535, # Orange
+    ])
+
+    output_weights = np.array([
+        [ 5.4452653, -1.87916  ],
+        [-2.0285792,  5.59163  ],
+        [-4.693778,  -5.0045652],
+   ])
+
+    m = np.array([141.8463, 6.2363])
+    s = np.array([10.5088, 1.7896])
+
+    # uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
+
+    plot_kwargs = {}
+    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 8, 'scale': 0.075, 'scale_units': 'dots'}
+
+    classes = ['Apple', 'Orange', 'Pear']
+    labels = ['Apple boundary', 'Orange boundary', 'Pear boundary']
+    colors = ['greenyellow', 'orange', 'forestgreen']
+
+    fig = plt.figure(figsize=(10,5))
+    ax_upperleft = fig.add_subplot(221)
+    ax_upperright = fig.add_subplot(222)
+    ax_bottom = fig.add_subplot(212)
+
+    ax_upperleft.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
+    ax_upperleft.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
+    ax_upperleft.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
+
+    xlim, ylim = get_lims(X)
+    point = np.array([[0, 0]], dtype=float)
+    scatter = ax_upperleft.scatter(*point.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
+    centerx = np.mean(xlim)
+    centery = np.mean(ylim)
+
+    n = 300
+    pi2 = np.pi * 2
+    pbar = tqdm(total=n)
+    def step(i):
+        rad = i / n * pi2
+        point[0, 0] = centerx + 20 * math.cos(rad)
+        point[0, 1] = centery + 5 * math.sin(rad)
+        scatter.set_offsets(point)
+        pbar.update(1)
+        return (scatter,)
+
+    ax_upperleft.set_xlim(*xlim)
+    ax_upperleft.set_ylim(*ylim)
+    anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
+    plt.show()
 
 
 
@@ -578,6 +643,7 @@ if __name__ == '__main__':
     # visualize_two_lines()
     # visualize_three_lines()
     # visualize_activations()
-    visualize_activations_animated()
+    # visualize_activations_animated()
     # visualize_appleness_pearness()
     # visualize_appleness_pearness_out_lines()
+    visualize_3lp_animated()
