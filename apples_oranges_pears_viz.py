@@ -198,7 +198,7 @@ def visualize_three_lines():
     plt.clf()
 
 
-def visualize_likelihoods():
+def visualize_activations():
     plt.xlabel("Weight (g)")
     plt.ylabel("Diameter (cm)")
     plt.title("Strengths")
@@ -270,15 +270,7 @@ def visualize_likelihoods():
     plt.clf()
 
 
-def forward(X: np.ndarray, intercepts: np.ndarray, slopes: np.ndarray):
-    z = intercepts + X @ slopes.T
-    z = z + abs(z.min())
-    z = z ** 2
-    z = z / z.sum()
-    return z
-
-
-def visualize_likelihoods_animated():
+def visualize_activations_animated():
     intercepts = np.array([
         -0.08808770030736923,
         -0.09143412113189697,
@@ -370,6 +362,13 @@ def visualize_likelihoods_animated():
             temp[1] = temp[1] - thing
             ax2.add_line(plt.Line2D(*temp.T, color='k', linewidth=1))
 
+    def forward(X: np.ndarray, intercepts: np.ndarray, slopes: np.ndarray):
+        z = intercepts + X @ slopes.T
+        z = z + abs(z.min())
+        z = z ** 2
+        z = z / z.sum()
+        return z
+
     n = 300
     pi2 = np.pi * 2
     pbar = tqdm(total=n)
@@ -412,7 +411,7 @@ def visualize_likelihoods_animated():
     fig.set_figwidth(10)
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    # anim.save("figures/likelihoods.gif", writer="ffmpeg", fps=24)
+    # anim.save("figures/activations.gif", writer="ffmpeg", fps=24)
     plt.show()
     plt.clf()
 
@@ -578,7 +577,7 @@ if __name__ == '__main__':
     # visualize_data_set()
     # visualize_two_lines()
     # visualize_three_lines()
-    # visualize_likelihoods()
-    visualize_likelihoods_animated()
+    # visualize_activations()
+    visualize_activations_animated()
     # visualize_appleness_pearness()
     # visualize_appleness_pearness_out_lines()
