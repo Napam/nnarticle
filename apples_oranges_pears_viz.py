@@ -595,7 +595,7 @@ def visualize_3lp_animated():
     m = np.array([141.8463, 6.2363])
     s = np.array([10.5088, 1.7896])
 
-    # uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
+    uhidden_biases, uhidden_weights = unnormalize_planes(m, s, hidden_biases, hidden_weights)
 
     plot_kwargs = {}
     quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 8, 'scale': 0.075, 'scale_units': 'dots'}
@@ -618,6 +618,13 @@ def visualize_3lp_animated():
     scatter = ax_upperleft.scatter(*point.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
     centerx = np.mean(xlim)
     centery = np.mean(ylim)
+
+    h1 = uhidden_biases + X @ uhidden_weights.T
+    h1 = 1 / (1 + np.exp(-h1))
+
+    ax_upperright.scatter(*h1[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
+    ax_upperright.scatter(*h1[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
+    ax_upperright.scatter(*h1[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
 
     n = 300
     pi2 = np.pi * 2
