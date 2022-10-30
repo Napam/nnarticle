@@ -526,6 +526,7 @@ def visualize_appleness_pearness_out_lines():
     ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
     ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
     ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+
     for i, (label, color, linestyle) in enumerate(zip(labels[:2], colors[:2], linestyles[:2])):
         _ = plot_hyperplane(
             xspace,
@@ -553,7 +554,16 @@ def visualize_appleness_pearness_out_lines():
     outlims = get_lims(outs)
     xspace2 = np.linspace(*outlims[0], 10)
     for i, (label, color, linestyle) in enumerate(zip(labels, colors, linestyles)):
-        plot_hyperplane(xspace2, output_biases[i], *output_weights[i], 6, c=color, ax=ax2, quiver_kwargs=quiver_kwargs, plot_kwargs={'linestyle': linestyle, 'label': label})
+        plot_hyperplane(
+            xspace2,
+            output_biases[i],
+            *output_weights[i],
+            6,
+            c=color,
+            ax=ax2,
+            quiver_kwargs=quiver_kwargs,
+            plot_kwargs={'linestyle': linestyle, 'label': label}
+        )
 
     ax2.set_xlabel("Appleness")
     ax2.set_ylabel("Pearness")
@@ -600,45 +610,106 @@ def visualize_3lp_animated():
     plot_kwargs = {}
     quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 8, 'scale': 0.075, 'scale_units': 'dots'}
 
-    classes = ['Apple', 'Orange', 'Pear']
-    labels = ['Apple boundary', 'Orange boundary', 'Pear boundary']
-    colors = ['greenyellow', 'orange', 'forestgreen']
+    classes = ['Apple', 'Pear', 'Orange']
+    labels = ['Apple boundary', 'Pear boundary', 'Orange boundary']
+    colors = ['greenyellow', 'forestgreen', 'orange']
+    linestyles = [None, None, None]
 
-    fig = plt.figure(figsize=(10,5))
+    fig = plt.figure(figsize=(10,8))
     ax_upperleft = fig.add_subplot(221)
     ax_upperright = fig.add_subplot(222)
     ax_bottom = fig.add_subplot(212)
 
+    xspace = np.linspace(*x_lim, 4)
     ax_upperleft.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
     ax_upperleft.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
     ax_upperleft.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
 
-    xlim, ylim = get_lims(X)
-    point = np.array([[0, 0]], dtype=float)
-    scatter = ax_upperleft.scatter(*point.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
-    centerx = np.mean(xlim)
-    centery = np.mean(ylim)
+    hidden_lines = []
+    hidden_quivers = []
+    for i, (label, color, linestyle) in enumerate(zip(labels[:2], colors[:2], linestyles[:2])):
+        _, artists = plot_hyperplane(
+            xspace,
+            uhidden_biases[i],
+            *uhidden_weights[i],
+            5,
+            c=color,
+            plot_kwargs={**plot_kwargs, 'label': label, 'linestyle': linestyle},
+            quiver_kwargs=quiver_kwargs,
+            ax=ax_upperleft,
+            return_artists=True
+        )
+        hidden_lines.append(artists['line'][0])
+        hidden_quivers.append(artists['arrows'])
+
+
+    point1 = np.array([[0, 0]], dtype=float)
+    scatterpoint1 = ax_upperleft.scatter(*point1.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
+    centerx = np.mean(x_lim)
+    centery = np.mean(y_lim)
 
     h1 = uhidden_biases + X @ uhidden_weights.T
     h1 = 1 / (1 + np.exp(-h1))
 
+    point2 = np.array([[0, 0]], dtype=float)
+    scatterpoint2 = ax_upperright.scatter(*point2.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
     ax_upperright.scatter(*h1[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
     ax_upperright.scatter(*h1[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
     ax_upperright.scatter(*h1[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
+
+    outlims = get_lims(h1)
+    xspace2 = np.linspace(*outlims[0], 10)
+    output_lines = []
+    output_quivers = []
+    for i, (label, color, linestyle) in enumerate(zip(labels, colors, linestyles)):
+        _, artists = plot_hyperplane(
+            xspace2,
+            output_biases[i],
+            *output_weights[i],
+            5,
+            c=color,
+            plot_kwargs={**plot_kwargs, 'label': label, 'linestyle': linestyle},
+            quiver_kwargs=quiver_kwargs,
+            ax=ax_upperright,
+            return_artists=True
+        )
+        output_lines.append(artists['line'][0])
+        output_quivers.append(artists['arrows'])
+
 
     n = 300
     pi2 = np.pi * 2
     pbar = tqdm(total=n)
     def step(i):
         rad = i / n * pi2
-        point[0, 0] = centerx + 20 * math.cos(rad)
-        point[0, 1] = centery + 5 * math.sin(rad)
-        scatter.set_offsets(point)
-        pbar.update(1)
-        return (scatter,)
+        point1[0, 0] = centerx + 20 * math.cos(rad)
+        point1[0, 1] = centery + 5 * math.sin(rad)
+        scatterpoint1.set_offsets(point1)
 
-    ax_upperleft.set_xlim(*xlim)
-    ax_upperleft.set_ylim(*ylim)
+        point2[:] = uhidden_biases + point1 @ uhidden_weights.T
+        point2[:] = 1 / (1 + np.exp(-point2))
+        scatterpoint2.set_offsets(point2)
+
+        pbar.update(1)
+        return (scatterpoint1, scatterpoint2)
+
+    ax_upperleft.set_xlim(*x_lim)
+    ax_upperleft.set_ylim(*y_lim)
+    ax_upperleft.set_aspect('equal')
+    ax_upperleft.set_xlabel('Weight (g)')
+    ax_upperleft.set_ylabel('Diameter (cm)')
+    ax_upperleft.set_aspect('equal')
+    ax_upperleft.set_title('Lines for apples and pears')
+
+    ax_upperright.set_xlabel("Appleness")
+    ax_upperright.set_ylabel("Pearness")
+    ax_upperright.set_title("Activation space")
+    ax_upperright.set_xlim(*outlims[0])
+    ax_upperright.set_ylim(*outlims[1])
+    ax_upperright.set_aspect('equal')
+    # ax_upperright.legend(loc='upper right')
+
+    fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
     plt.show()
 
