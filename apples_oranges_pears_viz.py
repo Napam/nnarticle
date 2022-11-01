@@ -392,7 +392,7 @@ def visualize_activations_animated():
         currclasstext.set_text(classes[currclass])
         pbar.update(1)
 
-        # (not i % 20) and sys.stdout.write(f"\x1b[JAppleness: {strengths[0]}\nOrangeness: {strengths[1]}\nPearness: {strengths[2]}\n\x1b[3A")
+
         return (scatter, *lines, *quivers, *circletexts, *circles, currclasstext, currclasscircle, xtext, ytext)
 
     ax1.set_xlabel("Weight (g)")
@@ -642,9 +642,8 @@ def visualize_3lp_animated():
         hidden_lines.append(artists['line'][0])
         hidden_quivers.append(artists['arrows'])
 
-
     point1 = np.array([[0, 0]], dtype=float)
-    scatterpoint1 = ax_upperleft.scatter(*point1.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
+    scatterpoint1 = ax_upperleft.scatter(*point1.T, label="Unknown", marker="x", c="black", s=70, zorder=100)
     centerx = np.mean(x_lim)
     centery = np.mean(y_lim)
 
@@ -652,7 +651,7 @@ def visualize_3lp_animated():
     h1 = 1 / (1 + np.exp(-h1))
 
     point2 = np.array([[0, 0]], dtype=float)
-    scatterpoint2 = ax_upperright.scatter(*point2.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
+    scatterpoint2 = ax_upperright.scatter(*point2.T, label="Unknown", marker="x", c="black", s=70, zorder=100)
     ax_upperright.scatter(*h1[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
     ax_upperright.scatter(*h1[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
     ax_upperright.scatter(*h1[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
@@ -676,22 +675,43 @@ def visualize_3lp_animated():
         output_lines.append(artists['line'][0])
         output_quivers.append(artists['arrows'])
 
+    reference = (0,0)
+    yspacing = 0.7
+    radius = 0.25
+
+    xcircle_center = (reference[0] - 2, reference[1] + 0.35)
+    ycircle_center = (xcircle_center[0], xcircle_center[1] - yspacing)
+    xcircle = patches.Circle(xcircle_center, radius, facecolor=(0,0,0,0), edgecolor='k')
+    ycircle = patches.Circle(ycircle_center, radius, facecolor=(0,0,0,0), edgecolor='k')
+    ax_bottom.add_patch(xcircle)
+    ax_bottom.add_patch(ycircle)
+    ax_bottom.annotate('Weight', (xcircle_center[0] - radius - 0.1, xcircle_center[1]), ha="right", va="center", fontsize=13)
+    ax_bottom.annotate('Diameter', (ycircle_center[0] - radius - 0.1, ycircle_center[1]), ha="right", va="center", fontsize=13)
 
     n = 300
     pi2 = np.pi * 2
-    pbar = tqdm(total=n)
+    pbar = tqdm(total=n, disable=True)
     def step(i):
         rad = i / n * pi2
         point1[0, 0] = centerx + 20 * math.cos(rad)
         point1[0, 1] = centery + 5 * math.sin(rad)
         scatterpoint1.set_offsets(point1)
 
-        point2[:] = uhidden_biases + point1 @ uhidden_weights.T
-        point2[:] = 1 / (1 + np.exp(-point2))
-        scatterpoint2.set_offsets(point2)
+        h1_ = uhidden_biases + point1 @ uhidden_weights.T
+        h1_ = 1 / (1 + np.exp(-h1_))
+        for i, line in enumerate(hidden_lines):
+            line.set_linewidth(max(h1_[0][i] * 8, 1))
+
+        scatterpoint2.set_offsets(h1_)
+
+        out_ = output_biases + h1_ @ output_weights.T
+        out_ = 1 / (1 + np.exp(-out_))
+
+        for i, line in enumerate(output_lines):
+            line.set_linewidth(max(out_[0][i] * 8, 1))
 
         pbar.update(1)
-        return (scatterpoint1, scatterpoint2)
+        return (scatterpoint1, scatterpoint2, *hidden_lines, *output_lines)
 
     ax_upperleft.set_xlim(*x_lim)
     ax_upperleft.set_ylim(*y_lim)
@@ -707,7 +727,10 @@ def visualize_3lp_animated():
     ax_upperright.set_xlim(*outlims[0])
     ax_upperright.set_ylim(*outlims[1])
     ax_upperright.set_aspect('equal')
-    # ax_upperright.legend(loc='upper right')
+
+    ax_bottom.set_aspect('equal')
+    ax_bottom.set_xlim(-3, 3)
+    ax_bottom.set_ylim(-1, 1)
 
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)

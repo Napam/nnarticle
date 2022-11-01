@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from numbers import Number
 from numpy.typing import ArrayLike
 import numpy as np
+from matplotlib import patches
 
 
 def get_lims(X: torch.Tensor, padding: float | ArrayLike = 0.25):
@@ -82,14 +83,71 @@ def unnormalize_planes(m: ArrayLike, s: ArrayLike, intercepts: ArrayLike, slopes
     slopes = slopes / s
     return intercepts, slopes
 
+def _get_centered_points(x: float, n: int, spacing: float) -> np.ndarray:
+    length = (n - 1) * spacing
+    start = x - length / 2
+    stop = start + length
+    return np.linspace(start, stop, n)
+
+def draw_ann(
+        layers: list[int],
+        *,
+        center: tuple[float] = (0, 0),
+        spacing: tuple[float] = (2.5, 1.5),
+        radius: float = 1,
+        ax: plt.Axes = None,
+        circle_kwargs: dict = None,
+        line_kwargs: dict = None,
+    ):
+
+    ax = ax or plt.gca()
+
+    spacing = radius + np.array(spacing) # Convert to node center spacing
+    n = len(layers)
+
+    # Draw circles
+    circles = []
+    for i, x, width in zip(range(n), _get_centered_points(center[0], n, spacing[0]), layers):
+        circles.append([])
+        for j, y in enumerate(_get_centered_points(center[1], width, spacing[1])):
+            circle = patches.Circle((x, y), radius, **circle_kwargs)
+            ax.add_patch(circle)
+            circles[-1].append(circle)
+
+    plt.quiver([0,1,2], [1,1,1])
+    # # Draw edges
+    # for left_circles, right_circles in zip(circles, circles[1:]):
+    #     for left_circle in left_circles:
+    #         for right_circle in right_circles:
+    #             left_center = np.array(left_circle.get_center())
+    #             right_center = np.array(right_circle.get_center())
+    #             d = right_center - left_center
+    #
+    #             plt.arrow(*left_center, *d, width=0.09)
+    #
+    #
+    return circles
 
 if __name__ == '__main__':
-    xspace = np.linspace(-2, 2, 10)
-    ax = plot_hyperplane(xspace, 0, 1, 1, n=10, c='r', quiver_kwargs={'units': 'dots'})
-    ax = plot_hyperplane(xspace, -1, 1, -1, n=10, c='g', quiver_kwargs={'units': 'dots'})
-    ax = plot_hyperplane(xspace, -1, -1, -1, n=10, c='b', quiver_kwargs={'units': 'dots'})
-    ax = plot_hyperplane(xspace, 0, -1, 1, n=10, c='y', quiver_kwargs={'units': 'dots'})
-    ax.set_aspect('equal')
+
+    # xspace = np.linspace(-2, 2, 10)
+    # ax = plot_hyperplane(xspace, 0, 1, 1, n=10, c='r', quiver_kwargs={'units': 'dots'})
+    # ax = plot_hyperplane(xspace, -1, 1, -1, n=10, c='g', quiver_kwargs={'units': 'dots'})
+    # ax = plot_hyperplane(xspace, -1, -1, -1, n=10, c='b', quiver_kwargs={'units': 'dots'})
+    # ax = plot_hyperplane(xspace, 0, -1, 1, n=10, c='y', quiver_kwargs={'units': 'dots'})
+    # ax.set_aspect('equal')
     # ax.set_xlim((-10,10))
     # ax.set_ylim((-10,10))
+    # plt.show()
+
+    draw_ann(
+        [2,2,3],
+        center=(0,0),
+        circle_kwargs={"facecolor": (0,0,0,0), "edgecolor": "k"},
+        line_kwargs={"color": "k", "linewidth": 1}
+    )
+    plt.gca().set_aspect('equal')
+    plt.autoscale()
     plt.show()
+
+    pass
