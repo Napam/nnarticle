@@ -110,7 +110,7 @@ def draw_ann(
     circles = []
     for i, x, width in zip(range(n), _get_centered_points(center[0], n, spacing[0]), layers):
         circles.append([])
-        for j, y in enumerate(_get_centered_points(center[1], width, spacing[1])):
+        for j, y in enumerate(_get_centered_points(center[1], width, spacing[1])[::-1]):
             circle = patches.Circle((x, y), radius, **circle_kwargs)
             ax.add_patch(circle)
             circles[-1].append(circle)

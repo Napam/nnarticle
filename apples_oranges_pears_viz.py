@@ -9,7 +9,7 @@ from matplotlib import patches
 import math
 from tqdm import tqdm
 
-from utils import get_lims, plot_hyperplane, unnormalize_plane, unnormalize_planes
+from utils import get_lims, plot_hyperplane, unnormalize_plane, unnormalize_planes, draw_ann
 plt.rcParams.update({'font.family': 'serif', 'mathtext.fontset': 'dejavuserif'})
 
 df = pd.read_csv("datasets/apples_oranges_pears.csv")
@@ -675,18 +675,30 @@ def visualize_3lp_animated():
         output_lines.append(artists['line'][0])
         output_quivers.append(artists['arrows'])
 
-    reference = (0,0)
-    yspacing = 0.7
     radius = 0.25
 
-    xcircle_center = (reference[0] - 2, reference[1] + 0.35)
-    ycircle_center = (xcircle_center[0], xcircle_center[1] - yspacing)
-    xcircle = patches.Circle(xcircle_center, radius, facecolor=(0,0,0,0), edgecolor='k')
-    ycircle = patches.Circle(ycircle_center, radius, facecolor=(0,0,0,0), edgecolor='k')
-    ax_bottom.add_patch(xcircle)
-    ax_bottom.add_patch(ycircle)
+    circles = draw_ann(
+        layers=[2,2,3],
+        radius = radius,
+        center=(-1.25,0),
+        spacing=(0.5,0.4),
+        ax = ax_bottom,
+        circle_kwargs={"facecolor": (0,0,0,0), "edgecolor": "k"},
+        quiver_kwargs={"color": "k", "width": 0.02}
+    )
+    xcircle_center = circles[0][0].get_center()
+    ycircle_center = circles[0][1].get_center()
     ax_bottom.annotate('Weight', (xcircle_center[0] - radius - 0.1, xcircle_center[1]), ha="right", va="center", fontsize=13)
     ax_bottom.annotate('Diameter', (ycircle_center[0] - radius - 0.1, ycircle_center[1]), ha="right", va="center", fontsize=13)
+
+    xcircle_text = ax_bottom.annotate('x', circles[0][0].get_center(), ha="center", va="center", fontsize=13)
+    ycircle_text = ax_bottom.annotate('y', circles[0][1].get_center(), ha="center", va="center", fontsize=13)
+    hidden1_text = ax_bottom.annotate('h1', circles[1][0].get_center(), ha="center", va="center", fontsize=13)
+    hidden2_text = ax_bottom.annotate('h2', circles[1][1].get_center(), ha="center", va="center", fontsize=13)
+    out1_text = ax_bottom.annotate('o1', circles[2][0].get_center(), ha="center", va="center", fontsize=13)
+    out2_text = ax_bottom.annotate('o2', circles[2][1].get_center(), ha="center", va="center", fontsize=13)
+    out3_text = ax_bottom.annotate('o3', circles[2][2].get_center(), ha="center", va="center", fontsize=13)
+
 
     n = 300
     pi2 = np.pi * 2
