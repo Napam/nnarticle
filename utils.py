@@ -93,19 +93,20 @@ def draw_ann(
         layers: list[int],
         *,
         center: tuple[float] = (0, 0),
-        spacing: tuple[float] = (2.5, 1.5),
+        spacing: tuple[float] = (3, 1.5),
         radius: float = 1,
         ax: plt.Axes = None,
         circle_kwargs: dict = None,
-        line_kwargs: dict = None,
+        quiver_kwargs: dict = None,
     ):
 
     ax = ax or plt.gca()
+    circle_kwargs = {} if circle_kwargs is None else circle_kwargs
+    quiver_kwargs = {} if quiver_kwargs is None else quiver_kwargs
 
     spacing = radius + np.array(spacing) # Convert to node center spacing
     n = len(layers)
 
-    # Draw circles
     circles = []
     for i, x, width in zip(range(n), _get_centered_points(center[0], n, spacing[0]), layers):
         circles.append([])
@@ -114,18 +115,15 @@ def draw_ann(
             ax.add_patch(circle)
             circles[-1].append(circle)
 
-    plt.quiver([0,1,2], [1,1,1])
-    # # Draw edges
-    # for left_circles, right_circles in zip(circles, circles[1:]):
-    #     for left_circle in left_circles:
-    #         for right_circle in right_circles:
-    #             left_center = np.array(left_circle.get_center())
-    #             right_center = np.array(right_circle.get_center())
-    #             d = right_center - left_center
-    #
-    #             plt.arrow(*left_center, *d, width=0.09)
-    #
-    #
+    for left_circles, right_circles in zip(circles, circles[1:]):
+        left_centers = np.array([l.get_center() for l in left_circles])
+        right_centers = np.array([r.get_center() for r in right_circles])
+        pdiff = (right_centers - left_centers[:,None,:]).reshape(-1,2)
+        adjust = pdiff / np.linalg.norm(pdiff, axis=1).reshape(-1,1) * radius
+        left_centers = left_centers.repeat(len(right_centers), 0) + adjust
+        pdiff -= adjust * 2
+        plt.quiver(*left_centers.T, *pdiff.T, units="xy", scale=1, scale_units="xy", **quiver_kwargs)
+
     return circles
 
 if __name__ == '__main__':
@@ -143,8 +141,9 @@ if __name__ == '__main__':
     draw_ann(
         [2,2,3],
         center=(0,0),
+        spacing=(3,2),
         circle_kwargs={"facecolor": (0,0,0,0), "edgecolor": "k"},
-        line_kwargs={"color": "k", "linewidth": 1}
+        quiver_kwargs={"color": "k", "width": 0.1}
     )
     plt.gca().set_aspect('equal')
     plt.autoscale()
