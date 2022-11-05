@@ -98,6 +98,7 @@ def draw_ann(
         ax: plt.Axes = None,
         circle_kwargs: dict = None,
         quiver_kwargs: dict = None,
+        edges: bool = True
     ):
 
     ax = ax or plt.gca()
@@ -108,12 +109,15 @@ def draw_ann(
     n = len(layers)
 
     circles = []
-    for i, x, width in zip(range(n), _get_centered_points(center[0], n, spacing[0]), layers):
+    for x, width in zip(_get_centered_points(center[0], n, spacing[0]), layers):
         circles.append([])
-        for j, y in enumerate(_get_centered_points(center[1], width, spacing[1])[::-1]):
+        for y in _get_centered_points(center[1], width, spacing[1])[::-1]:
             circle = patches.Circle((x, y), radius, **circle_kwargs)
             ax.add_patch(circle)
             circles[-1].append(circle)
+
+    if not edges:
+        return circles
 
     for left_circles, right_circles in zip(circles, circles[1:]):
         left_centers = np.array([l.get_center() for l in left_circles])

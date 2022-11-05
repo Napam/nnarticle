@@ -8,6 +8,7 @@ from matplotlib.animation import FuncAnimation
 from matplotlib import patches
 import math
 from tqdm import tqdm
+from itertools import chain
 
 from utils import get_lims, plot_hyperplane, unnormalize_plane, unnormalize_planes, draw_ann
 plt.rcParams.update({'font.family': 'serif', 'mathtext.fontset': 'dejavuserif'})
@@ -625,8 +626,10 @@ def visualize_3lp_animated():
     ax_upperleft.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
     ax_upperleft.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
 
+    # For use in FuncAnimation
+    animated_artists = []
+
     hidden_lines = []
-    hidden_quivers = []
     for i, (label, color, linestyle) in enumerate(zip(labels[:2], colors[:2], linestyles[:2])):
         _, artists = plot_hyperplane(
             xspace,
@@ -640,18 +643,17 @@ def visualize_3lp_animated():
             return_artists=True
         )
         hidden_lines.append(artists['line'][0])
-        hidden_quivers.append(artists['arrows'])
+
+    animated_artists.extend(hidden_lines)
 
     point1 = np.array([[0, 0]], dtype=float)
-    scatterpoint1 = ax_upperleft.scatter(*point1.T, label="Unknown", marker="x", c="black", s=70, zorder=100)
-    centerx = np.mean(x_lim)
-    centery = np.mean(y_lim)
+    animated_artists.append(scatterpoint1 := ax_upperleft.scatter(*point1.T, label="Unknown", marker="x", c="black", s=70, zorder=100))
 
     h1 = uhidden_biases + X @ uhidden_weights.T
     h1 = 1 / (1 + np.exp(-h1))
 
     point2 = np.array([[0, 0]], dtype=float)
-    scatterpoint2 = ax_upperright.scatter(*point2.T, label="Unknown", marker="x", c="black", s=70, zorder=100)
+    animated_artists.append(scatterpoint2 := ax_upperright.scatter(*point2.T, label="Unknown", marker="x", c="black", s=70, zorder=100))
     ax_upperright.scatter(*h1[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
     ax_upperright.scatter(*h1[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
     ax_upperright.scatter(*h1[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
@@ -659,7 +661,6 @@ def visualize_3lp_animated():
     outlims = get_lims(h1)
     xspace2 = np.linspace(*outlims[0], 10)
     output_lines = []
-    output_quivers = []
     for i, (label, color, linestyle) in enumerate(zip(labels, colors, linestyles)):
         _, artists = plot_hyperplane(
             xspace2,
@@ -673,57 +674,108 @@ def visualize_3lp_animated():
             return_artists=True
         )
         output_lines.append(artists['line'][0])
-        output_quivers.append(artists['arrows'])
+
+    animated_artists.extend(output_lines)
 
     radius = 0.25
-
+    ann_center = (-1.3, 0)
+    fontsize = 13
+    circle_kwargs={"facecolor": (0,0,0,0), "edgecolor": "k"}
     circles = draw_ann(
         layers=[2,2,3],
         radius = radius,
-        center=(-1.25,0),
+        center=ann_center,
         spacing=(0.5,0.4),
         ax = ax_bottom,
-        circle_kwargs={"facecolor": (0,0,0,0), "edgecolor": "k"},
-        quiver_kwargs={"color": "k", "width": 0.02}
+        circle_kwargs=circle_kwargs,
+        quiver_kwargs={"color": "k", "width": 0.016}
     )
-    xcircle_center = circles[0][0].get_center()
-    ycircle_center = circles[0][1].get_center()
-    ax_bottom.annotate('Weight', (xcircle_center[0] - radius - 0.1, xcircle_center[1]), ha="right", va="center", fontsize=13)
-    ax_bottom.annotate('Diameter', (ycircle_center[0] - radius - 0.1, ycircle_center[1]), ha="right", va="center", fontsize=13)
+    animated_artists.extend(chain.from_iterable(circles[1:]))
+    ccenters = [[np.array(circle.get_center()) for circle in layer] for layer in circles]
 
-    xcircle_text = ax_bottom.annotate('x', circles[0][0].get_center(), ha="center", va="center", fontsize=13)
-    ycircle_text = ax_bottom.annotate('y', circles[0][1].get_center(), ha="center", va="center", fontsize=13)
-    hidden1_text = ax_bottom.annotate('h1', circles[1][0].get_center(), ha="center", va="center", fontsize=13)
-    hidden2_text = ax_bottom.annotate('h2', circles[1][1].get_center(), ha="center", va="center", fontsize=13)
-    out1_text = ax_bottom.annotate('o1', circles[2][0].get_center(), ha="center", va="center", fontsize=13)
-    out2_text = ax_bottom.annotate('o2', circles[2][1].get_center(), ha="center", va="center", fontsize=13)
-    out3_text = ax_bottom.annotate('o3', circles[2][2].get_center(), ha="center", va="center", fontsize=13)
+    # Hidden node colors
+    circles[1][0].set_facecolor(colors[0])
+    circles[1][1].set_facecolor(colors[1])
 
+    # Output node colors
+    circles[2][0].set_facecolor(colors[0])
+    circles[2][1].set_facecolor(colors[1])
+    circles[2][2].set_facecolor(colors[2])
 
-    n = 300
+    # Static text in ax_bottom
+    ax_bottom.annotate('Weight', ccenters[0][0] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
+    ax_bottom.annotate('Diameter', ccenters[0][1] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
+    ax_bottom.annotate('Model graph', ccenters[1][0] + [0, 0.6], ha="center", va="center", fontsize=14)
+    ax_bottom.annotate('Appleness', ccenters[2][0] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_bottom.annotate('Pearness', ccenters[2][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_bottom.annotate('Orangeness', ccenters[2][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+
+    # Text inside nodes
+    animated_artists.extend([
+       x_text := ax_bottom.annotate('x', ccenters[0][0], ha="center", va="center", fontsize=fontsize),
+       y_text := ax_bottom.annotate('y', ccenters[0][1], ha="center", va="center", fontsize=fontsize),
+       hidden1_text := ax_bottom.annotate('h1', ccenters[1][0], ha="center", va="center", fontsize=fontsize),
+       hidden2_text := ax_bottom.annotate('h2', ccenters[1][1], ha="center", va="center", fontsize=fontsize),
+       out1_text := ax_bottom.annotate('o1', ccenters[2][0], ha="center", va="center", fontsize=fontsize),
+       out2_text := ax_bottom.annotate('o2', ccenters[2][1], ha="center", va="center", fontsize=fontsize),
+       out3_text := ax_bottom.annotate('o3', ccenters[2][2], ha="center", va="center", fontsize=fontsize)
+    ])
+
+    # Current class node
+    class_ccenter = np.array([1.6 ,0])
+    class_cradius = radius * 1.75
+    ax_bottom.annotate('Current classification', class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14)
+    animated_artists.append(class_circle := patches.Circle(class_ccenter, radius = class_cradius, **circle_kwargs))
+    animated_artists.append(class_text := ax_bottom.annotate('Apple', class_ccenter, ha="center", va="center", fontsize=14))
+    ax_bottom.add_patch(class_circle)
+
+    n = 300 # Animation steps
     pi2 = np.pi * 2
-    pbar = tqdm(total=n, disable=True)
+    max_linewidth = 9
+    min_linewidth = 0.5
+    pbar = tqdm(total=n + 1, disable=False)
+    centerx = np.mean(x_lim)
+    centery = np.mean(y_lim)
     def step(i):
         rad = i / n * pi2
         point1[0, 0] = centerx + 20 * math.cos(rad)
         point1[0, 1] = centery + 5 * math.sin(rad)
         scatterpoint1.set_offsets(point1)
+        x_text.set_text(f"{point1[0, 0]:.1f}")
+        y_text.set_text(f"{point1[0, 1]:.1f}")
 
+        # Hidden line widths
         h1_ = uhidden_biases + point1 @ uhidden_weights.T
         h1_ = 1 / (1 + np.exp(-h1_))
         for i, line in enumerate(hidden_lines):
-            line.set_linewidth(max(h1_[0][i] * 8, 1))
+            line.set_linewidth(max(h1_[0, i] * max_linewidth, min_linewidth))
+
+        hidden1_text.set_text(f"{h1_[0, 0]:.2f}")
+        hidden2_text.set_text(f"{h1_[0, 1]:.2f}")
+        circles[1][0].set_facecolor((*circles[1][0].get_facecolor()[:3], h1_[0, 0]))
+        circles[1][1].set_facecolor((*circles[1][1].get_facecolor()[:3], h1_[0, 1]))
 
         scatterpoint2.set_offsets(h1_)
 
+        # Output line widths
         out_ = output_biases + h1_ @ output_weights.T
         out_ = 1 / (1 + np.exp(-out_))
-
         for i, line in enumerate(output_lines):
-            line.set_linewidth(max(out_[0][i] * 8, 1))
+            line.set_linewidth(max(out_[0][i] * max_linewidth, min_linewidth))
+
+        out1_text.set_text(f"{out_[0, 0]:.2f}")
+        out2_text.set_text(f"{out_[0, 1]:.2f}")
+        out3_text.set_text(f"{out_[0, 2]:.2f}")
+        circles[2][0].set_facecolor((*circles[2][0].get_facecolor()[:3], out_[0, 0]))
+        circles[2][1].set_facecolor((*circles[2][1].get_facecolor()[:3], out_[0, 1]))
+        circles[2][2].set_facecolor((*circles[2][2].get_facecolor()[:3], out_[0, 2]))
+
+        curr_class = np.argmax(out_[0])
+        class_text.set_text(classes[curr_class])
+        class_circle.set_facecolor(colors[curr_class])
 
         pbar.update(1)
-        return (scatterpoint1, scatterpoint2, *hidden_lines, *output_lines)
+        return animated_artists
 
     ax_upperleft.set_xlim(*x_lim)
     ax_upperleft.set_ylim(*y_lim)
@@ -743,10 +795,15 @@ def visualize_3lp_animated():
     ax_bottom.set_aspect('equal')
     ax_bottom.set_xlim(-3, 3)
     ax_bottom.set_ylim(-1, 1)
+    ax_bottom.set_xticks([])
+    ax_bottom.set_yticks([])
+    ax_bottom.axis('off')
 
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    plt.show()
+    anim.save("figures/3lp.mp4", writer="ffmpeg", fps=60)
+    # plt.show()
+    plt.clf()
 
 
 
