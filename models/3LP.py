@@ -4,12 +4,17 @@ import pandas as pd
 from torch import nn
 from torch import optim
 from matplotlib import pyplot as plt
-from torch.nn.functional import one_hot, cross_entropy, softmax
+from torch.nn.functional import one_hot, cross_entropy
 import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from pathlib import Path
+import logging
 
-from utils import get_lims, normalize_data, plot_hyperplane, unnormalize_plane, unnormalize_planes
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from utils import get_lims, normalize_data, plot_hyperplane, unnormalize_planes
+
+logger = logging.getLogger("models.3LP")
+
 
 def accuracy(y_: torch.Tensor, y: torch.Tensor):
     y_, y = y_.detach(), y.detach()
@@ -24,7 +29,6 @@ def mse(y_: torch.Tensor, y: torch.Tensor):
 
 
 class ThreeLayerPerceptron(nn.Module):
-
     def __init__(self):
         super().__init__()
         self.hidden = nn.Linear(in_features=2, out_features=2)
@@ -52,12 +56,12 @@ class ThreeLayerPerceptron(nn.Module):
         criterion = self.conditioner_criterion
 
         losses = []
-        for i in range(10000):
+        for i in range(100):
             y_, z1 = self.forward(X, True)
             loss = criterion(y_, y, z1)
-            print(f"Loss: {loss.item():<25} Accuracy: {accuracy(y_, y).item()}")
+            logger.debug(f"Loss: {loss.item():<25} Accuracy: {accuracy(y_, y).item()}")
             if losses and torch.allclose(losses[-1], loss, atol=5e-7):
-                print("Achieved satisfactory loss convergence")
+                logger.info("Achieved satisfactory loss convergence")
                 break
             losses.append(loss.detach())
 
@@ -65,7 +69,7 @@ class ThreeLayerPerceptron(nn.Module):
             loss.backward()
             optimizer.step()
         else:
-            print("Hit maximum iteration")
+            logger.info("Hit maximum iteration")
 
     def plot(self, X: torch.Tensor, y: torch.Tensor, X_mean: torch.Tensor, X_std: torch.Tensor):
         X = X.numpy()
@@ -80,42 +84,65 @@ class ThreeLayerPerceptron(nn.Module):
         uintercepts, uslopes = unnormalize_planes(X_mean, X_std, hidden_biases, hidden_weights)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+        colors = ["greenyellow", "orange", "forestgreen"]
+        ycolors = np.vectorize({i: c for i, c in enumerate(colors)}.get)(y.argmax(1))
 
-        ax1.scatter(*X.T, c=y)
-        colors = ['red', 'green', 'blue']
+        ax1.scatter(*X.T, c=ycolors)
+
+        quiver_kwargs = {"scale": 0.05, "units": "dots", "width": 2}
         for i, color in enumerate([colors[0], colors[2]]):
-            plot_hyperplane(xspace1, uintercepts[i], uslopes[i][0], uslopes[i][1], 10, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2}, ax=ax1)
+            plot_hyperplane(
+                xspace1,
+                uintercepts[i],
+                uslopes[i][0],
+                uslopes[i][1],
+                10,
+                c=color,
+                quiver_kwargs=quiver_kwargs,
+                ax=ax1,
+            )
 
         X_hidden = self.sigmoid(torch.tensor(uintercepts + X @ uslopes.T)).detach().numpy()
-        ax2.scatter(*X_hidden.T, c=y)
+        ax2.scatter(*X_hidden.T, c=ycolors)
         output_biases, output_weights = self.output.bias.detach().numpy(), self.output.weight.detach().numpy()
         xspace2 = np.array([X_hidden[:, 0].min() * 0.75, X_hidden[:, 0].max() * 1.25])
 
         for i, color in enumerate(colors[:3]):
-            plot_hyperplane(xspace2, output_biases[i], *output_weights[i], 10, c=color, quiver_kwargs={'scale': 0.05, 'units': 'dots', 'width': 2}, ax=ax2)
+            plot_hyperplane(
+                xspace2,
+                output_biases[i],
+                *output_weights[i],
+                10,
+                c=color,
+                quiver_kwargs=quiver_kwargs,
+                ax=ax2,
+            )
 
         xlim1, ylim1 = get_lims(X, padding=0.5)
         ax1.set_xlim(*xlim1)
         ax1.set_ylim(*ylim1)
-        ax1.set_aspect('equal')
+        ax1.set_aspect("equal")
 
         xlim2, ylim2 = get_lims(X_hidden, padding=0.1)
         ax2.set_xlim(*xlim2)
         ax2.set_ylim(*ylim2)
-        ax2.set_aspect('equal')
+        ax2.set_aspect("equal")
 
         plt.show()
 
-        print('hidden_biases:', hidden_biases)
-        print('hidden_weights:', hidden_weights)
-        print('output_biases:', output_biases)
-        print('output_weights:', output_weights)
 
+if __name__ == "__main__":
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.DEBUG)
 
-if __name__ == '__main__':
+    try:
+        df = pd.read_csv("../data/generated/apples_oranges_pears.csv")
+    except Exception as e:
+        logger.error(f"Something wrong when attempting to import data: {e}")
+        sys.exit()
+
     model = ThreeLayerPerceptron()
 
-    df = pd.read_csv("../datasets/apples_oranges_pears.csv")
     X_raw = torch.tensor(df[["weight", "height"]].values, dtype=torch.float32)
     y_raw = torch.tensor(df["class"].map({"apple": 0, "orange": 1, "pear": 2}).values, dtype=torch.long)
 
@@ -123,5 +150,9 @@ if __name__ == '__main__':
     y = one_hot(y_raw)
 
     model.fit(X, y)
-    model.plot(X, y, X_mean, X_std)
 
+    print(model.hidden.bias.detach().numpy())
+    print(model.hidden.weight.detach().numpy())
+    print(model.state_dict)
+
+    # model.plot(X, y, X_mean, X_std)

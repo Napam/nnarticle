@@ -1,4 +1,4 @@
-# Normalize a model
+# Normalize a model (not tested properly)
 Let $f(x) = ax + b$. $f$ intercepts the two different arbitrary points $p_1, p_2$ when $x$ is $x_1, x_2$ respectively. Both points gets offset by $m\in\mathbb{R}^2$ then scaled by $s\in\mathbb{R}^2$, how do you adjust $a$ and $b$ such that $f$ still intersects each point by only using information about $m, s, a, b$?
 
 Can basically choose any points as long as they are different and intersects with $f$. Choose

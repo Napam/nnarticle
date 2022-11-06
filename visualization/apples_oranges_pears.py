@@ -801,8 +801,8 @@ def visualize_3lp_animated():
 
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    anim.save("figures/3lp.mp4", writer="ffmpeg", fps=60)
-    # plt.show()
+    # anim.save("figures/3lp.mp4", writer="ffmpeg", fps=60)
+    plt.show()
     plt.clf()
 
 

@@ -129,6 +129,9 @@ $$
 \end{aligned}
 $$
 # Un-normalize a model of the form $w_0 + w_1x_1 + w_2x_2$ second try
+
+**It turned out that the solution over was fine, there was a sign error somewhere else in the code hehe**
+
 Let $f(x, y) = w_0 + w_1x + w_2y$ be a hyperplane embedded in $\mathbb{R}^3$. Let $p_1, p_2, p_3 \in \mathbb{R}^2$ be arbitrary different points that lies on the domain of $f$, and there exists no straight line that intercepts all the points, in other words the points are not "placed in a row". The points gets scaled by $s\in\mathbb{R}^2$ then offset by $m\in\mathbb{R}^2$. Let $p_1', p_2', p_3'$ be the transformed versions of $p_1, p_2, p_3$ respectively. Find $g(x, y) = w_0' + w_1'x + w_2'y$ such that $g(p_1') = f(p_1)$, $g(p_2') = f(p_2)$ and $g(p_3') = f(p_3)$
 
 **Solution**
