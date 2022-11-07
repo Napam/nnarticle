@@ -42,7 +42,7 @@ class TwoLayerPerceptron(nn.Module):
         criterion = mse
 
         losses = []
-        for i in range(1000):
+        for _ in range(1000):
             y_ = self.forward(X)
             loss = criterion(y_, y)
             logger.debug(f"Loss: {loss.item():<25} Accuracy: {accuracy(y_, y).item()}")

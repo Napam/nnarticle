@@ -6,7 +6,6 @@ from torch import optim
 from matplotlib import pyplot as plt
 from torch.nn.functional import one_hot, cross_entropy
 import sys
-import os
 from pathlib import Path
 import logging
 
