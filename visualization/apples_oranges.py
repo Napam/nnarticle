@@ -1,12 +1,28 @@
 import torch
 import pandas as pd
 from matplotlib import pyplot as plt
+import sys
+from pathlib import Path
+import logging
 
-from utils import get_lims, plot_hyperplane, unnormalize_plane
+project_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_dir))
+
+from utils import get_lims, plot_hyperplane, unnormalize_planes
+
+logger = logging.getLogger("visualize.apples_and_oranges")
+
 plt.rcParams.update({'font.family': 'serif', 'mathtext.fontset': 'dejavuserif'})
 
-df = pd.read_csv("datasets/apples_and_oranges.csv")
+try:
+    df = pd.read_csv(project_dir / 'data' / 'generated' / 'apples_oranges_pears.csv')
+except Exception as e:
+    logger.error(f"Something wrong when attempting to import data: {e}")
+    sys.exit()
+
+df = df[~df['class'].str.fullmatch("pear")]
 X, y = df[["weight", "height"]].values, df["class"].map({"apple": 0, "orange": 1}).values
+print(y.shape)
 x_lim, y_lim = get_lims(X, padding=1.25)
 
 
@@ -22,7 +38,11 @@ def visualize_data_set():
     plt.gca().set_aspect('equal')
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
-    plt.savefig("figures/applesnoranges.pdf")
+
+    file = project_dir / 'visualization' / 'figures' / 'dataset_apples_oranges_pears.pdf'
+    plt.savefig(file)
+    logger.info(f'Created figure {file}')
+
     plt.clf()
 
 
@@ -39,7 +59,11 @@ def visualize_data_set_with_unknown_point():
     plt.gca().set_aspect('equal')
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
-    plt.savefig("figures/applesnoranges_unknown_point.pdf")
+
+    file = project_dir / 'visualization' / 'figures' / 'apples_oranges_x.pdf'
+    plt.savefig(file)
+    logger.info(f'Created figure {file}')
+
     plt.clf()
 
 
@@ -73,6 +97,10 @@ def visualize_data_set_with_unknown_point_and_line():
 
 
 if __name__ == "__main__":
+
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.INFO)
+
     visualize_data_set()
     visualize_data_set_with_unknown_point()
     visualize_data_set_with_unknown_point_and_line()
