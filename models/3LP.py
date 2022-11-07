@@ -6,12 +6,14 @@ from torch import optim
 from matplotlib import pyplot as plt
 from torch.nn.functional import one_hot, cross_entropy
 import sys
+import os
 from pathlib import Path
 import logging
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+project_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_dir))
 
-from utils import get_lims, normalize_data, plot_hyperplane, unnormalize_planes
+from utils import get_lims, normalize_data, plot_hyperplane, unnormalize_planes, model_to_json
 
 logger = logging.getLogger("models.3LP")
 
@@ -40,7 +42,6 @@ class ThreeLayerPerceptron(nn.Module):
         h1 = self.sigmoid(z1)
         z2 = self.output(h1)
         h2 = self.sigmoid(z2)
-        out = h2 / h2.sum(1).reshape(-1, 1)
         if return_z1:
             return h2, z1
         return h2
@@ -56,12 +57,12 @@ class ThreeLayerPerceptron(nn.Module):
         criterion = self.conditioner_criterion
 
         losses = []
-        for i in range(100):
+        for _ in range(5000):
             y_, z1 = self.forward(X, True)
             loss = criterion(y_, y, z1)
             logger.debug(f"Loss: {loss.item():<25} Accuracy: {accuracy(y_, y).item()}")
             if losses and torch.allclose(losses[-1], loss, atol=5e-7):
-                logger.info("Achieved satisfactory loss convergence")
+                logger.info(f"Achieved satisfactory loss convergence at loss {loss}")
                 break
             losses.append(loss.detach())
 
@@ -69,7 +70,7 @@ class ThreeLayerPerceptron(nn.Module):
             loss.backward()
             optimizer.step()
         else:
-            logger.info("Hit maximum iteration")
+            logger.info(f"Hit maximum iteration at loss {loss}")
 
     def plot(self, X: torch.Tensor, y: torch.Tensor, X_mean: torch.Tensor, X_std: torch.Tensor):
         X = X.numpy()
@@ -83,7 +84,7 @@ class ThreeLayerPerceptron(nn.Module):
         hidden_biases, hidden_weights = self.hidden.bias.detach().numpy(), self.hidden.weight.detach().numpy()
         uintercepts, uslopes = unnormalize_planes(X_mean, X_std, hidden_biases, hidden_weights)
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+        _, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
         colors = ["greenyellow", "orange", "forestgreen"]
         ycolors = np.vectorize({i: c for i, c in enumerate(colors)}.get)(y.argmax(1))
 
@@ -128,15 +129,14 @@ class ThreeLayerPerceptron(nn.Module):
         ax2.set_ylim(*ylim2)
         ax2.set_aspect("equal")
 
-        plt.show()
-
 
 if __name__ == "__main__":
+
     logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     try:
-        df = pd.read_csv("../data/generated/apples_oranges_pears.csv")
+        df = pd.read_csv(project_dir / 'data' / 'generated' / 'apples_oranges_pears.csv')
     except Exception as e:
         logger.error(f"Something wrong when attempting to import data: {e}")
         sys.exit()
@@ -151,8 +151,17 @@ if __name__ == "__main__":
 
     model.fit(X, y)
 
-    print(model.hidden.bias.detach().numpy())
-    print(model.hidden.weight.detach().numpy())
-    print(model.state_dict)
+    stem = Path(__file__).stem
+    weight_file = project_dir / 'models' / 'weights' / f'{stem}.json'
+    image_file = project_dir / 'models' / 'weights' / f'{stem}.png'
 
-    # model.plot(X, y, X_mean, X_std)
+    if weight_file.exists():
+        logger.info(f'Weight file for {__file__} already exists, will not save')
+        sys.exit()
+
+    model_to_json(model, weight_file)
+    logger.info(f'Saved weight file for {__file__} at {weight_file}')
+    model.plot(X, y, X_mean, X_std)
+    plt.savefig(image_file)
+    logger.info(f'Saved weight image file for {__file__} at {image_file}')
+

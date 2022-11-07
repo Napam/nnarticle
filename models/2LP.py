@@ -9,9 +9,10 @@ import sys
 from pathlib import Path
 import logging
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+project_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_dir))
 
-from utils import get_lims, normalize_data, plot_hyperplane, unnormalize_planes
+from utils import get_lims, normalize_data, plot_hyperplane, unnormalize_planes, model_to_json
 
 logger = logging.getLogger("models.2LP")
 
@@ -37,7 +38,7 @@ class TwoLayerPerceptron(nn.Module):
         return torch.sigmoid(self.planes(X))
 
     def fit(self, X: torch.Tensor, y: torch.Tensor):
-        optimizer = optim.Adam(self.parameters(), lr=1e-2, weight_decay=0.25)
+        optimizer = optim.Adam(self.parameters(), lr=3e-3, weight_decay=0.1)
         criterion = mse
 
         losses = []
@@ -45,7 +46,7 @@ class TwoLayerPerceptron(nn.Module):
             y_ = self.forward(X)
             loss = criterion(y_, y)
             logger.debug(f"Loss: {loss.item():<25} Accuracy: {accuracy(y_, y).item()}")
-            if losses and torch.allclose(losses[-1], loss, atol=5e-6):
+            if losses and torch.allclose(losses[-1], loss, atol=5e-7):
                 logger.info(f"Achieved satisfactory loss convergence at {loss}")
                 break
             losses.append(loss.detach())
@@ -54,7 +55,7 @@ class TwoLayerPerceptron(nn.Module):
             loss.backward()
             optimizer.step()
         else:
-            logger.info("Hit maximum iteration")
+            logger.info(f"Hit maximum iteration at loss {loss}")
 
     def plot(self, X: torch.Tensor, y: torch.Tensor, X_mean: torch.Tensor, X_std: torch.Tensor):
         X = X.numpy()
@@ -84,14 +85,15 @@ class TwoLayerPerceptron(nn.Module):
         plt.xlim(*xlim)
         plt.ylim(*ylim)
         plt.gca().set_aspect("equal")
-        plt.show()
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.INFO)
 
     try:
-        df = pd.read_csv("../data/generated/apples_oranges_pears.csv")
+        df = pd.read_csv(project_dir / 'data' / 'generated' / 'apples_oranges_pears.csv')
     except Exception as e:
         logger.error(f"Something wrong when attempting to import data: {e}")
         sys.exit()
@@ -105,4 +107,18 @@ if __name__ == "__main__":
     y = one_hot(y_raw)
 
     model.fit(X, y)
+
+    stem = Path(__file__).stem
+    weight_file = project_dir / 'models' / 'weights' / f'{stem}.json'
+    image_file = project_dir / 'models' / 'weights' / f'{stem}.png'
+
+    if weight_file.exists():
+        logger.info(f'Weight file for {__file__} already exists, will not save')
+        sys.exit()
+
+    model_to_json(model, weight_file)
+    logger.info(f'Saved weight file for {__file__} at {weight_file}')
     model.plot(X, y, X_mean, X_std)
+    plt.savefig(image_file)
+    logger.info(f'Saved weight image file for {__file__} at {image_file}')
+
