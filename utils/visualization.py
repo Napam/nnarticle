@@ -4,6 +4,10 @@ import numpy as np
 from matplotlib import patches
 
 
+def setup_font():
+    plt.rcParams.update({"font.family": "serif", "mathtext.fontset": "dejavuserif"})
+
+
 def plot_hyperplane(
     xspace: ArrayLike,
     intercept: float,

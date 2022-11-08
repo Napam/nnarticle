@@ -23,8 +23,8 @@ def normalize_data(X: ArrayLike):
     return (X - X_mean) / X_std, X_mean, X_std
 
 
-def unnormalize_planes(m: ArrayLike, s: ArrayLike, intercepts: ArrayLike, slopes: ArrayLike):
-    intercepts, slopes = np.copy(intercepts), np.copy(slopes)
-    intercepts = intercepts - (m[0] * slopes[:, 0]) / s[0] - (m[1] * slopes[:, 1]) / s[1]
-    slopes = slopes / s
-    return intercepts, slopes
+def unnormalize_planes(m: ArrayLike, s: ArrayLike, intercepts: ArrayLike, weights: ArrayLike):
+    intercepts, weights = np.copy(intercepts), np.copy(weights)
+    intercepts = intercepts - (m[0] * weights[:, 0]) / s[0] - (m[1] * weights[:, 1]) / s[1]
+    weights = weights / s
+    return intercepts, weights
