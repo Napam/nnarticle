@@ -9,17 +9,73 @@ from matplotlib import patches
 import math
 from tqdm import tqdm
 from itertools import chain
+from pathlib import Path
+import logging
 
-from utils import get_lims, plot_hyperplane, unnormalize_plane, unnormalize_planes, draw_ann
+project_dir = Path(__file__).resolve().parent.parent
+figures_dir = project_dir / "visualization" / "figures"
+sys.path.insert(0, str(project_dir))
 
-plt.rcParams.update({"font.family": "serif", "mathtext.fontset": "dejavuserif"})
+from utils import get_lims, plot_hyperplane, unnormalize_planes, draw_ann, setup_pyplot_params, json_to_weights
 
-df = pd.read_csv("datasets/apples_oranges_pears.csv")
+logger = logging.getLogger("visualize.apples_oranges_pears")
+
+setup_pyplot_params()
+
+try:
+    df = pd.read_csv(project_dir / "data" / "generated" / "apples_oranges_pears.csv")
+except Exception as e:
+    logger.error(f"Something wrong when attempting to import data: {e}")
+    sys.exit()
+
 X, y = df[["weight", "height"]].values, df["class"].map({"apple": 0, "orange": 1, "pear": 2}).values
 x_lim, y_lim = get_lims(X, padding=[0.75, 1.5])
 
+m = X.mean(0)
+s = X.std(0)
 
-def visualize_data_set():
+model_weights_2lp = json_to_weights(project_dir / "models" / "weights" / "2LP.json")
+u2lp_biases, u2lp_weights = unnormalize_planes(
+    m, s, model_weights_2lp["planes.bias"], model_weights_2lp["planes.weight"]
+)
+
+model_weights_3lp = json_to_weights(project_dir / "models" / "weights" / "3LP.json")
+uhidden_biases, uhidden_weights = unnormalize_planes(
+    m, s, model_weights_3lp["hidden.bias"], model_weights_3lp["hidden.weight"]
+)
+uoutput_biases, uoutput_weights = unnormalize_planes(
+    m, s, model_weights_3lp["output.bias"], model_weights_3lp["output.weight"]
+)
+
+xspace = torch.linspace(x_lim[0], x_lim[1], 4)
+
+plot_kwargs = {}
+quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 8, "scale": 0.075, "scale_units": "dots"}
+
+classes = np.array(["Apple", "Orange", "Pear"])
+labels = np.array(
+    [
+        "Apple boundary",
+        "Orange boundary",
+        "Pear boundary",
+    ]
+)
+colors = np.array(
+    [
+        "greenyellow",
+        "orange",
+        "forestgreen",
+    ]
+)
+
+
+def savefig(file: str | Path):
+    file = figures_dir / file
+    plt.savefig(file)
+    logger.info(f"Created figure {file}")
+
+
+def visualize_data_set(save: bool = True, clf: bool = True):
     plt.xlabel("Weight (g)")
     plt.ylabel("Diameter (cm)")
     plt.title("Comparing apples, oranges and pears")
@@ -32,179 +88,49 @@ def visualize_data_set():
     plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
-    plt.savefig("figures/apples_oranges_pears.pdf")
-    plt.clf()
+
+    if save:
+        savefig("dataset_apples_oranges_pears.pdf")
+
+    if clf:
+        plt.clf()
 
 
 def visualize_data_set_with_orange_line():
-    plt.xlabel("Weight (g)")
-    plt.ylabel("Diameter (cm)")
+    visualize_data_set(False, False)
     plt.title("Comparing apples, oranges and pears with a single decision boundary")
-    plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
 
-    intercept = -0.014510540291666985
-    xslope = 1.6574535
-    yslope = 0.6743076
+    plot_hyperplane(xspace, uhidden_biases[0], *uhidden_weights[0], 10, c="k", quiver_kwargs=quiver_kwargs)
 
-    m = [135.7327, 6.8051]
-    s = [6.5687, 2.1522]
+    file = figures_dir / "apples_oranges_pears_with_orange_line.pdf"
+    plt.savefig(file)
+    logger.info(f"Created figure {file}")
 
-    xspace = torch.linspace(x_lim[0], x_lim[1], 4)
-    intercept_, xslope_, yslope_ = unnormalize_plane(m, s, intercept, xslope, yslope)
-    plot_hyperplane(
-        xspace,
-        intercept_,
-        xslope_,
-        yslope_,
-        10,
-        c="k",
-        alpha=0.75,
-        quiver_kwargs={"units": "dots", "width": 1.75, "scale": 0.075, "scale_units": "dots"},
-    )
-
-    plt.legend(loc="upper right")
-    plt.xlim(*x_lim)
-    plt.ylim(*y_lim)
-    plt.gca().set_aspect("equal")
-    plt.gcf().set_figheight(10)
-    plt.gcf().set_figwidth(10)
-    plt.savefig("figures/apples_oranges_pears_with_orange_line.pdf")
+    # plt.show()
     plt.clf()
 
 
 def visualize_two_lines():
-    plt.xlabel("Weight (g)")
-    plt.ylabel("Diameter (cm)")
+    visualize_data_set(False, False)
     plt.title("Decision boundaries for apples and pears")
-    plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
 
-    intercept1 = -1.525863
-    xslope1 = -4.1855865
-    yslope1 = -1.2977821
+    for (color, bias, weights) in zip(colors[[0,2]], uhidden_biases, uhidden_weights):
+        plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs)
 
-    intercept2 = -1.4590645
-    xslope2 = 3.8890042
-    yslope2 = -1.3885064
+    file = figures_dir / "apples_oranges_pears_two_lines.pdf"
+    plt.savefig(file)
+    logger.info(f"Created figure {file}")
 
-    m = [141.8463, 6.2363]
-    s = [10.5088, 1.7896]
-
-    xspace = torch.linspace(x_lim[0], x_lim[1], 4)
-
-    plot_kwargs = {}
-    quiver_kwargs = {"units": "dots", "width": 1.75, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
-
-    intercept_1, xslope_1, yslope_1 = unnormalize_plane(m, s, intercept1, xslope1, yslope1)
-    plot_hyperplane(
-        xspace,
-        intercept_1,
-        xslope_1,
-        yslope_1,
-        5,
-        c="greenyellow",
-        plot_kwargs={**plot_kwargs, "label": "Apple boundary"},
-        quiver_kwargs=quiver_kwargs,
-    )
-
-    intercept_2, xslope_2, yslope_2 = unnormalize_plane(m, s, intercept2, xslope2, yslope2)
-    plot_hyperplane(
-        xspace,
-        intercept_2,
-        xslope_2,
-        yslope_2,
-        5,
-        c="forestgreen",
-        plot_kwargs={**plot_kwargs, "linestyle": "--", "label": "Pear boundary"},
-        quiver_kwargs=quiver_kwargs,
-    )
-
-    plt.legend(loc="upper right")
-    plt.xlim(*x_lim)
-    plt.ylim(*y_lim)
-    plt.gca().set_aspect("equal")
-    plt.gcf().set_figheight(10)
-    plt.gcf().set_figwidth(10)
-    # plt.savefig("figures/apples_oranges_pears_two_lines.pdf")
-    plt.show()
+    # plt.show()
     plt.clf()
 
 
 def visualize_three_lines():
-    plt.xlabel("Weight (g)")
-    plt.ylabel("Diameter (cm)")
+    visualize_data_set(False, False)
     plt.title("Decision boundaries for apples, oranges and pears")
-    plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
 
-    intercept1 = -1.360250473022461
-    xslope1 = -3.2235553
-    yslope1 = -1.1162834
-
-    intercept2 = -1.2119554281234741
-    xslope2 = 0.63510317
-    yslope2 = 2.3010178
-
-    intercept3 = -1.4134321212768555
-    xslope3 = 2.7407901
-    yslope3 = -1.087009
-
-    m = [141.8463, 6.2363]
-    s = [10.5088, 1.7896]
-
-    xspace = torch.linspace(x_lim[0], x_lim[1], 4)
-
-    plot_kwargs = {"linewidth": 3}
-    quiver_kwargs = {"units": "dots", "width": 1.75, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
-
-    intercept_1, xslope_1, yslope_1 = unnormalize_plane(m, s, intercept1, xslope1, yslope1)
-    plot_hyperplane(
-        xspace,
-        intercept_1,
-        xslope_1,
-        yslope_1,
-        8,
-        c="greenyellow",
-        plot_kwargs={**plot_kwargs, "label": "Apple boundary"},
-        quiver_kwargs=quiver_kwargs,
-    )
-
-    intercept_2, xslope_2, yslope_2 = unnormalize_plane(m, s, intercept2, xslope2, yslope2)
-    plot_hyperplane(
-        xspace,
-        intercept_2,
-        xslope_2,
-        yslope_2,
-        8,
-        c="orange",
-        plot_kwargs={**plot_kwargs, "linestyle": "-.", "label": "Orange boundary"},
-        quiver_kwargs=quiver_kwargs,
-    )
-
-    intercept_3, xslope_3, yslope_3 = unnormalize_plane(m, s, intercept3, xslope3, yslope3)
-    plot_hyperplane(
-        xspace,
-        intercept_3,
-        xslope_3,
-        yslope_3,
-        8,
-        c="forestgreen",
-        plot_kwargs={**plot_kwargs, "linestyle": "--", "label": "Pear boundary"},
-        quiver_kwargs=quiver_kwargs,
-    )
-
-    plt.legend(loc="upper right")
-    plt.xlim(*x_lim)
-    plt.ylim(*y_lim)
-    plt.gca().set_aspect("equal")
-    plt.gcf().set_figheight(10)
-    plt.gcf().set_figwidth(10)
-    plt.savefig("figures/apples_oranges_pears_three_lines.pdf")
-    # plt.show()
+    # plt.savefig("figures/apples_oranges_pears_three_lines.pdf")
+    plt.show()
     plt.clf()
 
 
@@ -356,7 +282,7 @@ def visualize_activations_animated():
     def forward(X: np.ndarray, intercepts: np.ndarray, slopes: np.ndarray):
         z = intercepts + X @ slopes.T
         z = z + abs(z.min())
-        z = z ** 2
+        z = z**2
         z = z / z.sum()
         return z
 
@@ -827,12 +753,16 @@ def visualize_3lp_animated():
 
 
 if __name__ == "__main__":
-    # visualize_data_set_with_orange_line()
-    # visualize_data_set()
-    # visualize_two_lines()
-    # visualize_three_lines()
+
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.INFO)
+
+    visualize_data_set()
+    visualize_data_set_with_orange_line()
+    visualize_two_lines()
+    visualize_three_lines()
     # visualize_activations()
     # visualize_activations_animated()
     # visualize_appleness_pearness()
     # visualize_appleness_pearness_out_lines()
-    visualize_3lp_animated()
+    # visualize_3lp_animated()
