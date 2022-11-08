@@ -12,15 +12,15 @@ from utils import get_lims, plot_hyperplane, unnormalize_planes
 
 logger = logging.getLogger("visualize.apples_and_oranges")
 
-plt.rcParams.update({'font.family': 'serif', 'mathtext.fontset': 'dejavuserif'})
+plt.rcParams.update({"font.family": "serif", "mathtext.fontset": "dejavuserif"})
 
 try:
-    df = pd.read_csv(project_dir / 'data' / 'generated' / 'apples_oranges_pears.csv')
+    df = pd.read_csv(project_dir / "data" / "generated" / "apples_oranges_pears.csv")
 except Exception as e:
     logger.error(f"Something wrong when attempting to import data: {e}")
     sys.exit()
 
-df = df[~df['class'].str.fullmatch("pear")]
+df = df[~df["class"].str.fullmatch("pear")]
 X, y = df[["weight", "height"]].values, df["class"].map({"apple": 0, "orange": 1}).values
 print(y.shape)
 x_lim, y_lim = get_lims(X, padding=1.25)
@@ -35,13 +35,13 @@ def visualize_data_set():
     plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
 
-    file = project_dir / 'visualization' / 'figures' / 'dataset_apples_oranges_pears.pdf'
+    file = project_dir / "visualization" / "figures" / "dataset_apples_oranges_pears.pdf"
     plt.savefig(file)
-    logger.info(f'Created figure {file}')
+    logger.info(f"Created figure {file}")
 
     plt.clf()
 
@@ -56,13 +56,13 @@ def visualize_data_set_with_unknown_point():
     plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
 
-    file = project_dir / 'visualization' / 'figures' / 'apples_oranges_x.pdf'
+    file = project_dir / "visualization" / "figures" / "apples_oranges_x.pdf"
     plt.savefig(file)
-    logger.info(f'Created figure {file}')
+    logger.info(f"Created figure {file}")
 
     plt.clf()
 
@@ -84,12 +84,20 @@ def visualize_data_set_with_unknown_point_and_line():
 
     xspace = torch.linspace(x_lim[0], x_lim[1], 4)
     intercept_, xslope_, yslope_ = unnormalize_plane(m, s, intercept, xslope, yslope)
-    plot_hyperplane(xspace, intercept_, xslope_, yslope_, 5, c='k', alpha=0.75, quiver_kwargs={
-                    'units': 'dots', 'width': 1.75, 'scale': 0.075, 'scale_units': 'dots'})
+    plot_hyperplane(
+        xspace,
+        intercept_,
+        xslope_,
+        yslope_,
+        5,
+        c="k",
+        alpha=0.75,
+        quiver_kwargs={"units": "dots", "width": 1.75, "scale": 0.075, "scale_units": "dots"},
+    )
     plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
     plt.savefig("figures/applesnoranges_unknown_point_with_line.pdf")

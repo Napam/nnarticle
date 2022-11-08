@@ -93,7 +93,7 @@ if __name__ == "__main__":
     logger.setLevel(logging.INFO)
 
     try:
-        df = pd.read_csv(project_dir / 'data' / 'generated' / 'apples_oranges_pears.csv')
+        df = pd.read_csv(project_dir / "data" / "generated" / "apples_oranges_pears.csv")
     except Exception as e:
         logger.error(f"Something wrong when attempting to import data: {e}")
         sys.exit()
@@ -109,16 +109,15 @@ if __name__ == "__main__":
     model.fit(X, y)
 
     stem = Path(__file__).stem
-    weight_file = project_dir / 'models' / 'weights' / f'{stem}.json'
-    image_file = project_dir / 'models' / 'weights' / f'{stem}.png'
+    weight_file = project_dir / "models" / "weights" / f"{stem}.json"
+    image_file = project_dir / "models" / "weights" / f"{stem}.png"
 
     if weight_file.exists():
-        logger.info(f'Weight file for {__file__} already exists, will not save')
+        logger.info(f"Weight file for {__file__} already exists, will not save")
         sys.exit()
 
     model_to_json(model, weight_file)
-    logger.info(f'Saved weight file for {__file__} at {weight_file}')
+    logger.info(f"Saved weight file for {__file__} at {weight_file}")
     model.plot(X, y, X_mean, X_std)
     plt.savefig(image_file)
-    logger.info(f'Saved weight image file for {__file__} at {image_file}')
-
+    logger.info(f"Saved weight image file for {__file__} at {image_file}")

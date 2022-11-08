@@ -11,7 +11,8 @@ from tqdm import tqdm
 from itertools import chain
 
 from utils import get_lims, plot_hyperplane, unnormalize_plane, unnormalize_planes, draw_ann
-plt.rcParams.update({'font.family': 'serif', 'mathtext.fontset': 'dejavuserif'})
+
+plt.rcParams.update({"font.family": "serif", "mathtext.fontset": "dejavuserif"})
 
 df = pd.read_csv("datasets/apples_oranges_pears.csv")
 X, y = df[["weight", "height"]].values, df["class"].map({"apple": 0, "orange": 1, "pear": 2}).values
@@ -28,7 +29,7 @@ def visualize_data_set():
     plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
     plt.savefig("figures/apples_oranges_pears.pdf")
@@ -52,13 +53,21 @@ def visualize_data_set_with_orange_line():
 
     xspace = torch.linspace(x_lim[0], x_lim[1], 4)
     intercept_, xslope_, yslope_ = unnormalize_plane(m, s, intercept, xslope, yslope)
-    plot_hyperplane(xspace, intercept_, xslope_, yslope_, 10, c='k', alpha=0.75, quiver_kwargs={
-                    'units': 'dots', 'width': 1.75, 'scale': 0.075, 'scale_units': 'dots'})
+    plot_hyperplane(
+        xspace,
+        intercept_,
+        xslope_,
+        yslope_,
+        10,
+        c="k",
+        alpha=0.75,
+        quiver_kwargs={"units": "dots", "width": 1.75, "scale": 0.075, "scale_units": "dots"},
+    )
 
     plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
     plt.savefig("figures/apples_oranges_pears_with_orange_line.pdf")
@@ -87,7 +96,7 @@ def visualize_two_lines():
     xspace = torch.linspace(x_lim[0], x_lim[1], 4)
 
     plot_kwargs = {}
-    quiver_kwargs = {'units': 'dots', 'width': 1.75, 'headwidth': 4, 'scale': 0.075, 'scale_units': 'dots'}
+    quiver_kwargs = {"units": "dots", "width": 1.75, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
 
     intercept_1, xslope_1, yslope_1 = unnormalize_plane(m, s, intercept1, xslope1, yslope1)
     plot_hyperplane(
@@ -96,9 +105,9 @@ def visualize_two_lines():
         xslope_1,
         yslope_1,
         5,
-        c='greenyellow',
-        plot_kwargs={**plot_kwargs, 'label': 'Apple boundary'},
-        quiver_kwargs=quiver_kwargs
+        c="greenyellow",
+        plot_kwargs={**plot_kwargs, "label": "Apple boundary"},
+        quiver_kwargs=quiver_kwargs,
     )
 
     intercept_2, xslope_2, yslope_2 = unnormalize_plane(m, s, intercept2, xslope2, yslope2)
@@ -108,15 +117,15 @@ def visualize_two_lines():
         xslope_2,
         yslope_2,
         5,
-        c='forestgreen',
-        plot_kwargs={**plot_kwargs, 'linestyle': '--', 'label': 'Pear boundary'},
-        quiver_kwargs=quiver_kwargs
+        c="forestgreen",
+        plot_kwargs={**plot_kwargs, "linestyle": "--", "label": "Pear boundary"},
+        quiver_kwargs=quiver_kwargs,
     )
 
     plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
     # plt.savefig("figures/apples_oranges_pears_two_lines.pdf")
@@ -149,8 +158,8 @@ def visualize_three_lines():
 
     xspace = torch.linspace(x_lim[0], x_lim[1], 4)
 
-    plot_kwargs = {'linewidth': 3}
-    quiver_kwargs = {'units': 'dots', 'width': 1.75, 'headwidth': 4, 'scale': 0.075, 'scale_units': 'dots'}
+    plot_kwargs = {"linewidth": 3}
+    quiver_kwargs = {"units": "dots", "width": 1.75, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
 
     intercept_1, xslope_1, yslope_1 = unnormalize_plane(m, s, intercept1, xslope1, yslope1)
     plot_hyperplane(
@@ -159,9 +168,9 @@ def visualize_three_lines():
         xslope_1,
         yslope_1,
         8,
-        c='greenyellow',
-        plot_kwargs={**plot_kwargs, 'label': 'Apple boundary'},
-        quiver_kwargs=quiver_kwargs
+        c="greenyellow",
+        plot_kwargs={**plot_kwargs, "label": "Apple boundary"},
+        quiver_kwargs=quiver_kwargs,
     )
 
     intercept_2, xslope_2, yslope_2 = unnormalize_plane(m, s, intercept2, xslope2, yslope2)
@@ -171,9 +180,9 @@ def visualize_three_lines():
         xslope_2,
         yslope_2,
         8,
-        c='orange',
-        plot_kwargs={**plot_kwargs, 'linestyle': '-.', 'label': 'Orange boundary'},
-        quiver_kwargs=quiver_kwargs
+        c="orange",
+        plot_kwargs={**plot_kwargs, "linestyle": "-.", "label": "Orange boundary"},
+        quiver_kwargs=quiver_kwargs,
     )
 
     intercept_3, xslope_3, yslope_3 = unnormalize_plane(m, s, intercept3, xslope3, yslope3)
@@ -183,15 +192,15 @@ def visualize_three_lines():
         xslope_3,
         yslope_3,
         8,
-        c='forestgreen',
-        plot_kwargs={**plot_kwargs, 'linestyle': '--', 'label': 'Pear boundary'},
-        quiver_kwargs=quiver_kwargs
+        c="forestgreen",
+        plot_kwargs={**plot_kwargs, "linestyle": "--", "label": "Pear boundary"},
+        quiver_kwargs=quiver_kwargs,
     )
 
     plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
     plt.savefig("figures/apples_oranges_pears_three_lines.pdf")
@@ -204,17 +213,9 @@ def visualize_activations():
     plt.ylabel("Diameter (cm)")
     plt.title("Strengths")
 
-    intercepts = np.array([
-        -0.08808770030736923,
-        -0.09143412113189697,
-        -0.09384874999523163
-    ])
+    intercepts = np.array([-0.08808770030736923, -0.09143412113189697, -0.09384874999523163])
 
-    slopes = np.array(
-        [[-0.19972077, -0.03343868],
-         [-0.021978999, 0.14851315],
-         [0.20376714, -0.11762319]]
-    )
+    slopes = np.array([[-0.19972077, -0.03343868], [-0.021978999, 0.14851315], [0.20376714, -0.11762319]])
 
     m = np.array([141.8463, 6.2363])
     s = np.array([10.5088, 1.7896])
@@ -229,25 +230,13 @@ def visualize_activations():
     xspace = torch.linspace(x_lim[0], x_lim[1], 4)
 
     plot_kwargs = {}
-    quiver_kwargs = {'units': 'dots', 'width': 1.75, 'headwidth': 4, 'scale': 0.075, 'scale_units': 'dots'}
+    quiver_kwargs = {"units": "dots", "width": 1.75, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
 
-    linestyles = [
-        None,
-        '-.',
-        '--'
-    ]
+    linestyles = [None, "-.", "--"]
 
-    labels = [
-        'Apple boundary',
-        'Orange boundary',
-        'Pear boundary'
-    ]
+    labels = ["Apple boundary", "Orange boundary", "Pear boundary"]
 
-    colors = [
-        'greenyellow',
-        'orange',
-        'forestgreen'
-    ]
+    colors = ["greenyellow", "orange", "forestgreen"]
 
     for i, (linestyle, label, color) in enumerate(zip(linestyles, labels, colors)):
         plot_hyperplane(
@@ -256,14 +245,19 @@ def visualize_activations():
             *uslopes[i],
             8,
             c=color,
-            plot_kwargs={**plot_kwargs, 'linestyle': linestyle, 'linewidth': max(strengths[i] * 10, 0.1), 'label': label},
-            quiver_kwargs={**quiver_kwargs, 'scale': max((1 - strengths[i]) * 0.25, 0.05)}
+            plot_kwargs={
+                **plot_kwargs,
+                "linestyle": linestyle,
+                "linewidth": max(strengths[i] * 10, 0.1),
+                "label": label,
+            },
+            quiver_kwargs={**quiver_kwargs, "scale": max((1 - strengths[i]) * 0.25, 0.05)},
         )
 
     # plt.legend(loc="upper right")
     plt.xlim(*x_lim)
     plt.ylim(*y_lim)
-    plt.gca().set_aspect('equal')
+    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
     plt.savefig("figures/apples_oranges_pears_strengths.pdf")
@@ -272,17 +266,9 @@ def visualize_activations():
 
 
 def visualize_activations_animated():
-    intercepts = np.array([
-        -0.08808770030736923,
-        -0.09143412113189697,
-        -0.09384874999523163
-    ])
+    intercepts = np.array([-0.08808770030736923, -0.09143412113189697, -0.09384874999523163])
 
-    slopes = np.array(
-        [[-0.19972077, -0.03343868],
-         [-0.021978999, 0.14851315],
-         [0.20376714, -0.11762319]]
-    )
+    slopes = np.array([[-0.19972077, -0.03343868], [-0.021978999, 0.14851315], [0.20376714, -0.11762319]])
 
     m = np.array([141.8463, 6.2363])
     s = np.array([10.5088, 1.7896])
@@ -290,11 +276,11 @@ def visualize_activations_animated():
     uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
 
     plot_kwargs = {}
-    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 8, 'scale': 0.075, 'scale_units': 'dots'}
+    quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 8, "scale": 0.075, "scale_units": "dots"}
 
-    classes = ['Apple', 'Orange', 'Pear']
-    labels = ['Apple boundary', 'Orange boundary', 'Pear boundary']
-    colors = ['greenyellow', 'orange', 'forestgreen']
+    classes = ["Apple", "Orange", "Pear"]
+    labels = ["Apple boundary", "Orange boundary", "Pear boundary"]
+    colors = ["greenyellow", "orange", "forestgreen"]
 
     fig, (ax1, ax2) = plt.subplots(2, 1)
 
@@ -312,13 +298,13 @@ def visualize_activations_animated():
             *uslopes[i],
             8,
             c=color,
-            plot_kwargs={**plot_kwargs, 'label': label},
+            plot_kwargs={**plot_kwargs, "label": label},
             quiver_kwargs=quiver_kwargs,
             return_artists=True,
-            ax=ax1
+            ax=ax1,
         )
-        lines.append(artists['line'][0])
-        quivers.append(artists['arrows'])
+        lines.append(artists["line"][0])
+        quivers.append(artists["arrows"])
 
     point = np.array([[0, 0]], dtype=float)
     scatter = ax1.scatter(*point.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
@@ -331,27 +317,31 @@ def visualize_activations_animated():
     nodesy = 0
     nodesx = -1.5
     yspacing = 0.75
-    for pos, color, name in zip([(nodesx, nodesy + yspacing), (nodesx, nodesy), (nodesx, nodesy - yspacing)], colors, ['Appleness', 'Orangeness', 'Pearness']):
-        circle = patches.Circle(pos, nnradius, facecolor=color, edgecolor='k')
+    for pos, color, name in zip(
+        [(nodesx, nodesy + yspacing), (nodesx, nodesy), (nodesx, nodesy - yspacing)],
+        colors,
+        ["Appleness", "Orangeness", "Pearness"],
+    ):
+        circle = patches.Circle(pos, nnradius, facecolor=color, edgecolor="k")
         ax2.add_patch(circle)
         circles.append(circle)
-        circletexts.append(ax2.annotate('0', xy=pos, fontsize=12, ha="center", va="center"))
+        circletexts.append(ax2.annotate("0", xy=pos, fontsize=12, ha="center", va="center"))
         ax2.annotate(f"{name}", xy=(pos[0] + 0.5, pos[1]), fontsize=14, va="center")
 
     ax2.annotate("Current classification", xy=(nodesx + 3.75, nodesy + yspacing), fontsize=14, ha="center")
-    currclasscircle = patches.Circle((nodesx + 3.75, nodesy), 0.6, facecolor='orange', edgecolor='k')
+    currclasscircle = patches.Circle((nodesx + 3.75, nodesy), 0.6, facecolor="orange", edgecolor="k")
     currclasstext = ax2.annotate("", xy=(nodesx + 3.75, 0), ha="center", va="center", fontsize=16)
     ax2.add_patch(currclasscircle)
 
     ax2.annotate("Model graph", (pos[0] - 1.25, nodesy + 1.3), va="center", fontsize=14)
-    xcircle = patches.Circle((nodesx - 1.25, nodesy + yspacing / 2), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
-    ycircle = patches.Circle((nodesx - 1.25, nodesy - yspacing / 2), nnradius, facecolor=(0, 0, 0, 0), edgecolor='k')
+    xcircle = patches.Circle((nodesx - 1.25, nodesy + yspacing / 2), nnradius, facecolor=(0, 0, 0, 0), edgecolor="k")
+    ycircle = patches.Circle((nodesx - 1.25, nodesy - yspacing / 2), nnradius, facecolor=(0, 0, 0, 0), edgecolor="k")
     ax2.add_patch(xcircle)
     ax2.add_patch(ycircle)
-    xtext = ax2.annotate('', (nodesx - 1.25, nodesy + yspacing / 2), ha="center", va="center", fontsize=12)
-    ytext = ax2.annotate('', (nodesx - 1.25, nodesy - yspacing / 2), ha="center", va="center", fontsize=12)
-    ax2.annotate('Weight', (nodesx - 1.75, nodesy + yspacing / 2), ha="right", va="center", fontsize=14)
-    ax2.annotate('Diameter', (nodesx - 1.75, nodesy - yspacing / 2), ha="right", va="center", fontsize=14)
+    xtext = ax2.annotate("", (nodesx - 1.25, nodesy + yspacing / 2), ha="center", va="center", fontsize=12)
+    ytext = ax2.annotate("", (nodesx - 1.25, nodesy - yspacing / 2), ha="center", va="center", fontsize=12)
+    ax2.annotate("Weight", (nodesx - 1.75, nodesy + yspacing / 2), ha="right", va="center", fontsize=14)
+    ax2.annotate("Diameter", (nodesx - 1.75, nodesy - yspacing / 2), ha="right", va="center", fontsize=14)
 
     # Edges
     for left_circle in (xcircle, ycircle):
@@ -361,7 +351,7 @@ def visualize_activations_animated():
             thing = (diff / np.linalg.norm(diff)) * nnradius
             temp[0] = temp[0] + thing
             temp[1] = temp[1] - thing
-            ax2.add_line(plt.Line2D(*temp.T, color='k', linewidth=1))
+            ax2.add_line(plt.Line2D(*temp.T, color="k", linewidth=1))
 
     def forward(X: np.ndarray, intercepts: np.ndarray, slopes: np.ndarray):
         z = intercepts + X @ slopes.T
@@ -393,17 +383,16 @@ def visualize_activations_animated():
         currclasstext.set_text(classes[currclass])
         pbar.update(1)
 
-
         return (scatter, *lines, *quivers, *circletexts, *circles, currclasstext, currclasscircle, xtext, ytext)
 
     ax1.set_xlabel("Weight (g)")
     ax1.set_ylabel("Diameter (cm)")
     ax1.set_xlim(*x_lim)
     ax1.set_ylim(*y_lim)
-    ax1.set_aspect('equal')
+    ax1.set_aspect("equal")
 
-    ax2.axis('off')
-    ax2.set_aspect('equal')
+    ax2.axis("off")
+    ax2.set_aspect("equal")
     ax2.set_xlim(-5, 5)
     ax2.set_ylim(-1.25, 1.3)
 
@@ -418,17 +407,21 @@ def visualize_activations_animated():
 
 
 def visualize_appleness_pearness():
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10,5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-    intercepts = np.array([
-        -1.9472151, # Apple
-        -2.260901, # Pear
-    ])
+    intercepts = np.array(
+        [
+            -1.9472151,  # Apple
+            -2.260901,  # Pear
+        ]
+    )
 
-    slopes = np.array([
-        [-4.1687274, -1.3713175],
-        [ 4.5323997, -1.6058096],
-    ])
+    slopes = np.array(
+        [
+            [-4.1687274, -1.3713175],
+            [4.5323997, -1.6058096],
+        ]
+    )
 
     m = np.array([141.8463, 6.2363])
     s = np.array([10.5088, 1.7896])
@@ -437,11 +430,11 @@ def visualize_appleness_pearness():
     uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
 
     plot_kwargs = {}
-    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 4, 'scale': 0.075, 'scale_units': 'dots'}
+    quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
 
-    classes = ['Apple', 'Pear']
-    labels = ['Apple boundary', 'Pear boundary']
-    colors = ['greenyellow', 'forestgreen']
+    classes = ["Apple", "Pear"]
+    labels = ["Apple boundary", "Pear boundary"]
+    colors = ["greenyellow", "forestgreen"]
 
     xspace = np.linspace(x_lim[0], x_lim[1], 4)
     ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
@@ -454,21 +447,20 @@ def visualize_appleness_pearness():
             *uslopes[i],
             5,
             c=color,
-            plot_kwargs={**plot_kwargs, 'label': label},
+            plot_kwargs={**plot_kwargs, "label": label},
             quiver_kwargs=quiver_kwargs,
             return_artists=True,
-            ax=ax1
+            ax=ax1,
         )
 
     outs = uintercepts + X @ uslopes.T
     outs = 1 / (1 + np.exp(-outs))
 
-    ax1.set_xlabel('Weight (g)')
-    ax1.set_ylabel('Diameter (cm)')
-    ax1.set_aspect('equal')
-    ax1.set_title('Lines for apples and pears')
+    ax1.set_xlabel("Weight (g)")
+    ax1.set_ylabel("Diameter (cm)")
+    ax1.set_aspect("equal")
+    ax1.set_title("Lines for apples and pears")
     ax1.set_ylim(*y_lim)
-
 
     ax2.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
     ax2.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
@@ -476,39 +468,47 @@ def visualize_appleness_pearness():
     ax2.set_xlabel("Appleness")
     ax2.set_ylabel("Pearness")
     ax2.set_title("Activation space")
-    ax2.set_aspect('equal')
+    ax2.set_aspect("equal")
 
-    fig.tight_layout(rect=[0,0,1,0.90])
+    fig.tight_layout(rect=[0, 0, 1, 0.90])
     fig.suptitle("Visualizing appleness and pearness for each point")
-    plt.savefig('figures/appleness_pearness.pdf')
+    plt.savefig("figures/appleness_pearness.pdf")
     # plt.show()
     plt.clf()
 
 
 def visualize_appleness_pearness_out_lines():
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10,5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
 
-    hidden_biases = np.array([
-        -1.9472151, # Apple
-        -2.260901, # Pear
-    ])
+    hidden_biases = np.array(
+        [
+            -1.9472151,  # Apple
+            -2.260901,  # Pear
+        ]
+    )
 
-    hidden_weights = np.array([
-        [-4.1687274, -1.3713175],
-        [ 4.5323997, -1.6058096],
-    ])
+    hidden_weights = np.array(
+        [
+            [-4.1687274, -1.3713175],
+            [4.5323997, -1.6058096],
+        ]
+    )
 
-    output_biases = np.array([
-        -2.0450604, # Apple
-        -2.1543744, # Pear
-        2.6014535, # Orange
-    ])
+    output_biases = np.array(
+        [
+            -2.0450604,  # Apple
+            -2.1543744,  # Pear
+            2.6014535,  # Orange
+        ]
+    )
 
-    output_weights = np.array([
-        [ 5.4452653, -1.87916  ],
-        [-2.0285792,  5.59163  ],
-        [-4.693778,  -5.0045652],
-   ])
+    output_weights = np.array(
+        [
+            [5.4452653, -1.87916],
+            [-2.0285792, 5.59163],
+            [-4.693778, -5.0045652],
+        ]
+    )
 
     m = np.array([141.8463, 6.2363])
     s = np.array([10.5088, 1.7896])
@@ -516,12 +516,12 @@ def visualize_appleness_pearness_out_lines():
     uhidden_biases, uhidden_weights = unnormalize_planes(m, s, hidden_biases, hidden_weights)
 
     plot_kwargs = {}
-    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 4, 'scale': 0.075, 'scale_units': 'dots'}
+    quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
 
-    classes = ['Apple', 'Pear', 'Orange']
-    labels = ['Apple boundary', 'Pear boundary', 'Orange boundary']
-    colors = ['greenyellow', 'forestgreen', 'orange']
-    linestyles = [None, '--', '-.']
+    classes = ["Apple", "Pear", "Orange"]
+    labels = ["Apple boundary", "Pear boundary", "Orange boundary"]
+    colors = ["greenyellow", "forestgreen", "orange"]
+    linestyles = [None, "--", "-."]
 
     xspace = np.linspace(x_lim[0], x_lim[1], 4)
     ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
@@ -535,18 +535,18 @@ def visualize_appleness_pearness_out_lines():
             *uhidden_weights[i],
             5,
             c=color,
-            plot_kwargs={**plot_kwargs, 'label': label, 'linestyle': linestyle},
+            plot_kwargs={**plot_kwargs, "label": label, "linestyle": linestyle},
             quiver_kwargs=quiver_kwargs,
-            ax=ax1
+            ax=ax1,
         )
 
     outs = uhidden_biases + X @ uhidden_weights.T
     outs = 1 / (1 + np.exp(-outs))
 
-    ax1.set_xlabel('Weight (g)')
-    ax1.set_ylabel('Diameter (cm)')
-    ax1.set_aspect('equal')
-    ax1.set_title('Lines for apples and pears')
+    ax1.set_xlabel("Weight (g)")
+    ax1.set_ylabel("Diameter (cm)")
+    ax1.set_aspect("equal")
+    ax1.set_title("Lines for apples and pears")
     ax1.set_ylim(*y_lim)
 
     ax2.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
@@ -563,7 +563,7 @@ def visualize_appleness_pearness_out_lines():
             c=color,
             ax=ax2,
             quiver_kwargs=quiver_kwargs,
-            plot_kwargs={'linestyle': linestyle, 'label': label}
+            plot_kwargs={"linestyle": linestyle, "label": label},
         )
 
     ax2.set_xlabel("Appleness")
@@ -571,37 +571,46 @@ def visualize_appleness_pearness_out_lines():
     ax2.set_title("Activation space")
     ax2.set_xlim(*outlims[0])
     ax2.set_ylim(*outlims[1])
-    ax2.set_aspect('equal')
-    ax2.legend(loc='upper right')
+    ax2.set_aspect("equal")
+    ax2.legend(loc="upper right")
 
-    fig.tight_layout(rect=[0,0,1,0.85])
+    fig.tight_layout(rect=[0, 0, 1, 0.85])
     fig.suptitle("Visualizing appleness and pearness for each point\nwith decision boundaries in the activation space")
-    plt.savefig('figures/appleness_pearness_with_out_lines.pdf')
+    plt.savefig("figures/appleness_pearness_with_out_lines.pdf")
     # plt.show()
     plt.clf()
 
+
 def visualize_3lp_animated():
-    hidden_biases = np.array([
-        -1.9472151, # Apple
-        -2.260901, # Pear
-    ])
+    hidden_biases = np.array(
+        [
+            -1.9472151,  # Apple
+            -2.260901,  # Pear
+        ]
+    )
 
-    hidden_weights = np.array([
-        [-4.1687274, -1.3713175],
-        [ 4.5323997, -1.6058096],
-    ])
+    hidden_weights = np.array(
+        [
+            [-4.1687274, -1.3713175],
+            [4.5323997, -1.6058096],
+        ]
+    )
 
-    output_biases = np.array([
-        -2.0450604, # Apple
-        -2.1543744, # Pear
-        2.6014535, # Orange
-    ])
+    output_biases = np.array(
+        [
+            -2.0450604,  # Apple
+            -2.1543744,  # Pear
+            2.6014535,  # Orange
+        ]
+    )
 
-    output_weights = np.array([
-        [ 5.4452653, -1.87916  ],
-        [-2.0285792,  5.59163  ],
-        [-4.693778,  -5.0045652],
-   ])
+    output_weights = np.array(
+        [
+            [5.4452653, -1.87916],
+            [-2.0285792, 5.59163],
+            [-4.693778, -5.0045652],
+        ]
+    )
 
     m = np.array([141.8463, 6.2363])
     s = np.array([10.5088, 1.7896])
@@ -609,14 +618,14 @@ def visualize_3lp_animated():
     uhidden_biases, uhidden_weights = unnormalize_planes(m, s, hidden_biases, hidden_weights)
 
     plot_kwargs = {}
-    quiver_kwargs = {'units': 'dots', 'width': 2, 'headwidth': 8, 'scale': 0.075, 'scale_units': 'dots'}
+    quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 8, "scale": 0.075, "scale_units": "dots"}
 
-    classes = ['Apple', 'Pear', 'Orange']
-    labels = ['Apple boundary', 'Pear boundary', 'Orange boundary']
-    colors = ['greenyellow', 'forestgreen', 'orange']
+    classes = ["Apple", "Pear", "Orange"]
+    labels = ["Apple boundary", "Pear boundary", "Orange boundary"]
+    colors = ["greenyellow", "forestgreen", "orange"]
     linestyles = [None, None, None]
 
-    fig = plt.figure(figsize=(10,8))
+    fig = plt.figure(figsize=(10, 8))
     ax_upperleft = fig.add_subplot(221)
     ax_upperright = fig.add_subplot(222)
     ax_bottom = fig.add_subplot(212)
@@ -637,23 +646,27 @@ def visualize_3lp_animated():
             *uhidden_weights[i],
             5,
             c=color,
-            plot_kwargs={**plot_kwargs, 'label': label, 'linestyle': linestyle},
+            plot_kwargs={**plot_kwargs, "label": label, "linestyle": linestyle},
             quiver_kwargs=quiver_kwargs,
             ax=ax_upperleft,
-            return_artists=True
+            return_artists=True,
         )
-        hidden_lines.append(artists['line'][0])
+        hidden_lines.append(artists["line"][0])
 
     animated_artists.extend(hidden_lines)
 
     point1 = np.array([[0, 0]], dtype=float)
-    animated_artists.append(scatterpoint1 := ax_upperleft.scatter(*point1.T, label="Unknown", marker="x", c="black", s=70, zorder=100))
+    animated_artists.append(
+        scatterpoint1 := ax_upperleft.scatter(*point1.T, label="Unknown", marker="x", c="black", s=70, zorder=100)
+    )
 
     h1 = uhidden_biases + X @ uhidden_weights.T
     h1 = 1 / (1 + np.exp(-h1))
 
     point2 = np.array([[0, 0]], dtype=float)
-    animated_artists.append(scatterpoint2 := ax_upperright.scatter(*point2.T, label="Unknown", marker="x", c="black", s=70, zorder=100))
+    animated_artists.append(
+        scatterpoint2 := ax_upperright.scatter(*point2.T, label="Unknown", marker="x", c="black", s=70, zorder=100)
+    )
     ax_upperright.scatter(*h1[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
     ax_upperright.scatter(*h1[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
     ax_upperright.scatter(*h1[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
@@ -668,27 +681,27 @@ def visualize_3lp_animated():
             *output_weights[i],
             5,
             c=color,
-            plot_kwargs={**plot_kwargs, 'label': label, 'linestyle': linestyle},
+            plot_kwargs={**plot_kwargs, "label": label, "linestyle": linestyle},
             quiver_kwargs=quiver_kwargs,
             ax=ax_upperright,
-            return_artists=True
+            return_artists=True,
         )
-        output_lines.append(artists['line'][0])
+        output_lines.append(artists["line"][0])
 
     animated_artists.extend(output_lines)
 
     radius = 0.25
     ann_center = (-1.3, 0)
     fontsize = 13
-    circle_kwargs={"facecolor": (0,0,0,0), "edgecolor": "k"}
+    circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
     circles = draw_ann(
-        layers=[2,2,3],
-        radius = radius,
+        layers=[2, 2, 3],
+        radius=radius,
         center=ann_center,
-        spacing=(0.5,0.4),
-        ax = ax_bottom,
+        spacing=(0.5, 0.4),
+        ax=ax_bottom,
         circle_kwargs=circle_kwargs,
-        quiver_kwargs={"color": "k", "width": 0.016}
+        quiver_kwargs={"color": "k", "width": 0.016},
     )
     animated_artists.extend(chain.from_iterable(circles[1:]))
     ccenters = [[np.array(circle.get_center()) for circle in layer] for layer in circles]
@@ -703,39 +716,46 @@ def visualize_3lp_animated():
     circles[2][2].set_facecolor(colors[2])
 
     # Static text in ax_bottom
-    ax_bottom.annotate('Weight', ccenters[0][0] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
-    ax_bottom.annotate('Diameter', ccenters[0][1] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
-    ax_bottom.annotate('Model graph', ccenters[1][0] + [0, 0.6], ha="center", va="center", fontsize=14)
-    ax_bottom.annotate('Appleness', ccenters[2][0] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-    ax_bottom.annotate('Pearness', ccenters[2][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-    ax_bottom.annotate('Orangeness', ccenters[2][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Weight", ccenters[0][0] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Diameter", ccenters[0][1] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Model graph", ccenters[1][0] + [0, 0.6], ha="center", va="center", fontsize=14)
+    ax_bottom.annotate("Appleness", ccenters[2][0] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Pearness", ccenters[2][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Orangeness", ccenters[2][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
 
     # Text inside nodes
-    animated_artists.extend([
-       x_text := ax_bottom.annotate('x', ccenters[0][0], ha="center", va="center", fontsize=fontsize),
-       y_text := ax_bottom.annotate('y', ccenters[0][1], ha="center", va="center", fontsize=fontsize),
-       hidden1_text := ax_bottom.annotate('h1', ccenters[1][0], ha="center", va="center", fontsize=fontsize),
-       hidden2_text := ax_bottom.annotate('h2', ccenters[1][1], ha="center", va="center", fontsize=fontsize),
-       out1_text := ax_bottom.annotate('o1', ccenters[2][0], ha="center", va="center", fontsize=fontsize),
-       out2_text := ax_bottom.annotate('o2', ccenters[2][1], ha="center", va="center", fontsize=fontsize),
-       out3_text := ax_bottom.annotate('o3', ccenters[2][2], ha="center", va="center", fontsize=fontsize)
-    ])
+    animated_artists.extend(
+        [
+            x_text := ax_bottom.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize),
+            y_text := ax_bottom.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize),
+            hidden1_text := ax_bottom.annotate("h1", ccenters[1][0], ha="center", va="center", fontsize=fontsize),
+            hidden2_text := ax_bottom.annotate("h2", ccenters[1][1], ha="center", va="center", fontsize=fontsize),
+            out1_text := ax_bottom.annotate("o1", ccenters[2][0], ha="center", va="center", fontsize=fontsize),
+            out2_text := ax_bottom.annotate("o2", ccenters[2][1], ha="center", va="center", fontsize=fontsize),
+            out3_text := ax_bottom.annotate("o3", ccenters[2][2], ha="center", va="center", fontsize=fontsize),
+        ]
+    )
 
     # Current class node
-    class_ccenter = np.array([1.6 ,0])
+    class_ccenter = np.array([1.6, 0])
     class_cradius = radius * 1.75
-    ax_bottom.annotate('Current classification', class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14)
-    animated_artists.append(class_circle := patches.Circle(class_ccenter, radius = class_cradius, **circle_kwargs))
-    animated_artists.append(class_text := ax_bottom.annotate('Apple', class_ccenter, ha="center", va="center", fontsize=14))
+    ax_bottom.annotate(
+        "Current classification", class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14
+    )
+    animated_artists.append(class_circle := patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs))
+    animated_artists.append(
+        class_text := ax_bottom.annotate("Apple", class_ccenter, ha="center", va="center", fontsize=14)
+    )
     ax_bottom.add_patch(class_circle)
 
-    n = 300 # Animation steps
+    n = 300  # Animation steps
     pi2 = np.pi * 2
     max_linewidth = 9
     min_linewidth = 0.5
     pbar = tqdm(total=n + 1, disable=False)
     centerx = np.mean(x_lim)
     centery = np.mean(y_lim)
+
     def step(i):
         rad = i / n * pi2
         point1[0, 0] = centerx + 20 * math.cos(rad)
@@ -779,25 +799,25 @@ def visualize_3lp_animated():
 
     ax_upperleft.set_xlim(*x_lim)
     ax_upperleft.set_ylim(*y_lim)
-    ax_upperleft.set_aspect('equal')
-    ax_upperleft.set_xlabel('Weight (g)')
-    ax_upperleft.set_ylabel('Diameter (cm)')
-    ax_upperleft.set_aspect('equal')
-    ax_upperleft.set_title('Lines for apples and pears')
+    ax_upperleft.set_aspect("equal")
+    ax_upperleft.set_xlabel("Weight (g)")
+    ax_upperleft.set_ylabel("Diameter (cm)")
+    ax_upperleft.set_aspect("equal")
+    ax_upperleft.set_title("Lines for apples and pears")
 
     ax_upperright.set_xlabel("Appleness")
     ax_upperright.set_ylabel("Pearness")
     ax_upperright.set_title("Activation space")
     ax_upperright.set_xlim(*outlims[0])
     ax_upperright.set_ylim(*outlims[1])
-    ax_upperright.set_aspect('equal')
+    ax_upperright.set_aspect("equal")
 
-    ax_bottom.set_aspect('equal')
+    ax_bottom.set_aspect("equal")
     ax_bottom.set_xlim(-3, 3)
     ax_bottom.set_ylim(-1, 1)
     ax_bottom.set_xticks([])
     ax_bottom.set_yticks([])
-    ax_bottom.axis('off')
+    ax_bottom.axis("off")
 
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
@@ -806,8 +826,7 @@ def visualize_3lp_animated():
     plt.clf()
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # visualize_data_set_with_orange_line()
     # visualize_data_set()
     # visualize_two_lines()
