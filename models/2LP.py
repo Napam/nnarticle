@@ -38,11 +38,12 @@ class TwoLayerPerceptron(nn.Module):
         return torch.sigmoid(self.planes(X))
 
     def fit(self, X: torch.Tensor, y: torch.Tensor):
-        optimizer = optim.Adam(self.parameters(), lr=3e-3, weight_decay=0.1)
+        # Tuned such that the norms of the weights are kinda like the ones in 3LP
+        optimizer = optim.Adam(self.parameters(), lr=5e-3, weight_decay=0.00005)
         criterion = mse
 
         losses = []
-        for _ in range(1000):
+        for _ in range(5000):
             y_ = self.forward(X)
             loss = criterion(y_, y)
             logger.debug(f"Loss: {loss.item():<25} Accuracy: {accuracy(y_, y).item()}")
@@ -119,5 +120,6 @@ if __name__ == "__main__":
     model_to_json(model, weight_file)
     logger.info(f"Saved weight file for {__file__} at {weight_file}")
     model.plot(X, y, X_mean, X_std)
+    plt.show()
     plt.savefig(image_file)
     logger.info(f"Saved weight image file for {__file__} at {image_file}")

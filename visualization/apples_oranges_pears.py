@@ -75,17 +75,23 @@ def savefig(file: str | Path):
     logger.info(f"Created figure {file}")
 
 
-def visualize_data_set(save: bool = True, clf: bool = True):
-    plt.xlabel("Weight (g)")
-    plt.ylabel("Diameter (cm)")
+def visualize_data_set(save: bool = True, clf: bool = True, scatter_kwargs: dict = None, ax: plt.Axes = None):
+    scatter_kwargs = scatter_kwargs or {}
+
+    if ax is None:
+        ax = plt.gca()
+
+    ax.set_xlabel("Weight (g)")
+    ax.set_ylabel("Diameter (cm)")
+    ax.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", **scatter_kwargs)
+    ax.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", **scatter_kwargs)
+    ax.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, **scatter_kwargs)
+    ax.legend(loc="upper right")
+    ax.set_xlim(*x_lim)
+    ax.set_ylim(*y_lim)
+    ax.set_aspect("equal")
+
     plt.title("Comparing apples, oranges and pears")
-    plt.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    plt.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    plt.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
-    plt.legend(loc="upper right")
-    plt.xlim(*x_lim)
-    plt.ylim(*y_lim)
-    plt.gca().set_aspect("equal")
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
 
@@ -96,102 +102,96 @@ def visualize_data_set(save: bool = True, clf: bool = True):
         plt.clf()
 
 
-def visualize_data_set_with_orange_line():
+def visualize_data_with_apple_line():
     visualize_data_set(False, False)
     plt.title("Comparing apples, oranges and pears with a single decision boundary")
 
     plot_hyperplane(xspace, uhidden_biases[0], *uhidden_weights[0], 10, c="k", quiver_kwargs=quiver_kwargs)
 
-    file = figures_dir / "apples_oranges_pears_with_orange_line.pdf"
-    plt.savefig(file)
-    logger.info(f"Created figure {file}")
+    savefig("apples_oranges_pears_with_apple_line.pdf")
 
     # plt.show()
     plt.clf()
 
 
-def visualize_two_lines():
+def visualize_data_with_hidden_lines():
     visualize_data_set(False, False)
     plt.title("Decision boundaries for apples and pears")
 
     for (color, bias, weights) in zip(colors[[0,2]], uhidden_biases, uhidden_weights):
         plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs)
 
-    file = figures_dir / "apples_oranges_pears_two_lines.pdf"
-    plt.savefig(file)
-    logger.info(f"Created figure {file}")
+    savefig("apples_oranges_pears_hidden_lines.pdf")
 
     # plt.show()
     plt.clf()
 
 
-def visualize_three_lines():
+def visualize_data_with_2lp_lines(save: bool = True, clf: bool = True):
     visualize_data_set(False, False)
     plt.title("Decision boundaries for apples, oranges and pears")
 
-    # plt.savefig("figures/apples_oranges_pears_three_lines.pdf")
-    plt.show()
-    plt.clf()
+    for (class_, color, bias, weights) in zip(classes, colors, u2lp_biases, u2lp_weights):
+        plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs, plot_kwargs={"linewidth": 4, "label":f"{class_} line"})
+
+    plt.legend()
+
+    if save:
+       savefig("apples_oranges_pears_2lp_lines.pdf")
+
+    # plt.show()
+
+    if clf:
+        plt.clf()
 
 
-def visualize_activations():
-    plt.xlabel("Weight (g)")
-    plt.ylabel("Diameter (cm)")
-    plt.title("Strengths")
+def layer_2lp(X: np.ndarray):
+    z = u2lp_biases + X @ u2lp_weights.T
+    return 1 / (1 + np.exp(-z))
 
-    intercepts = np.array([-0.08808770030736923, -0.09143412113189697, -0.09384874999523163])
 
-    slopes = np.array([[-0.19972077, -0.03343868], [-0.021978999, 0.14851315], [0.20376714, -0.11762319]])
+def visualize_2lp_activations(save: bool = True, clf: bool = True, point: np.ndarray = None, ax: plt.Axes = None):
+    visualize_data_set(False, False, {"alpha": 0.5}, ax)
+    plt.title("Activations")
 
-    m = np.array([141.8463, 6.2363])
-    s = np.array([10.5088, 1.7896])
+    if ax is None:
+        ax = plt.gca()
 
-    uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
+    if point is None:
+        point = np.array([[140, 10]])
 
-    point = np.array([[140, 6]])
-    plt.scatter(*point.T, label="Unknown", marker="x", c="black", s=60)
+    ax.scatter(*point.T, label="Unknown", marker="x", c="black", s=60)
 
-    strengths = forward(point, uintercepts, uslopes)[0]
+    activations = layer_2lp(point)[0]
 
-    xspace = torch.linspace(x_lim[0], x_lim[1], 4)
+    max_linewidth = 9
+    min_linewidth = 1
 
-    plot_kwargs = {}
-    quiver_kwargs = {"units": "dots", "width": 1.75, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
-
-    linestyles = [None, "-.", "--"]
-
-    labels = ["Apple boundary", "Orange boundary", "Pear boundary"]
-
-    colors = ["greenyellow", "orange", "forestgreen"]
-
-    for i, (linestyle, label, color) in enumerate(zip(linestyles, labels, colors)):
+    for i, (label, color) in enumerate(zip(labels, colors)):
         plot_hyperplane(
             xspace,
-            uintercepts[i],
-            *uslopes[i],
+            u2lp_biases[i],
+            *u2lp_weights[i],
             8,
             c=color,
             plot_kwargs={
                 **plot_kwargs,
-                "linestyle": linestyle,
-                "linewidth": max(strengths[i] * 10, 0.1),
+                "linewidth": max(activations[i] * max_linewidth, min_linewidth),
                 "label": label,
             },
-            quiver_kwargs={**quiver_kwargs, "scale": max((1 - strengths[i]) * 0.25, 0.05)},
+            quiver_kwargs=quiver_kwargs,
+            ax=ax
         )
 
-    # plt.legend(loc="upper right")
-    plt.xlim(*x_lim)
-    plt.ylim(*y_lim)
-    plt.gca().set_aspect("equal")
-    plt.gcf().set_figheight(10)
-    plt.gcf().set_figwidth(10)
-    plt.savefig("figures/apples_oranges_pears_strengths.pdf")
+    if save:
+        savefig("apples_oranges_pears_activations.pdf")
+
     # plt.show()
-    plt.clf()
+    if clf:
+        plt.clf()
 
 
-def visualize_activations_animated():
+def visualize_2lp_activations_animated():
     intercepts = np.array([-0.08808770030736923, -0.09143412113189697, -0.09384874999523163])
 
     slopes = np.array([[-0.19972077, -0.03343868], [-0.021978999, 0.14851315], [0.20376714, -0.11762319]])
@@ -757,11 +757,11 @@ if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.setLevel(logging.INFO)
 
-    visualize_data_set()
-    visualize_data_set_with_orange_line()
-    visualize_two_lines()
-    visualize_three_lines()
-    # visualize_activations()
+    # visualize_data_set()
+    # visualize_data_set_with_orange_line()
+    # visualize_two_lines()
+    # visualize_data_with_2lp_lines()
+    visualize_2lp_activations()
     # visualize_activations_animated()
     # visualize_appleness_pearness()
     # visualize_appleness_pearness_out_lines()
