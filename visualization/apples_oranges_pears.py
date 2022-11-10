@@ -53,13 +53,6 @@ plot_kwargs = {}
 quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 8, "scale": 0.075, "scale_units": "dots"}
 
 classes = np.array(["Apple", "Orange", "Pear"])
-labels = np.array(
-    [
-        "Apple boundary",
-        "Orange boundary",
-        "Pear boundary",
-    ]
-)
 colors = np.array(
     [
         "greenyellow",
@@ -118,7 +111,7 @@ def visualize_data_with_hidden_lines():
     visualize_data_set(False, False)
     plt.title("Decision boundaries for apples and pears")
 
-    for (color, bias, weights) in zip(colors[[0,2]], uhidden_biases, uhidden_weights):
+    for (color, bias, weights) in zip(colors[[0, 2]], uhidden_biases, uhidden_weights):
         plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs)
 
     savefig("apples_oranges_pears_hidden_lines.pdf")
@@ -132,12 +125,20 @@ def visualize_data_with_2lp_lines(save: bool = True, clf: bool = True):
     plt.title("Decision boundaries for apples, oranges and pears")
 
     for (class_, color, bias, weights) in zip(classes, colors, u2lp_biases, u2lp_weights):
-        plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs, plot_kwargs={"linewidth": 4, "label":f"{class_} line"})
+        plot_hyperplane(
+            xspace,
+            bias,
+            *weights,
+            10,
+            c=color,
+            quiver_kwargs=quiver_kwargs,
+            plot_kwargs={"linewidth": 4, "label": f"{class_} line"},
+        )
 
     plt.legend()
 
     if save:
-       savefig("apples_oranges_pears_2lp_lines.pdf")
+        savefig("apples_oranges_pears_2lp_lines.pdf")
 
     # plt.show()
 
@@ -160,15 +161,17 @@ def visualize_2lp_activations(save: bool = True, clf: bool = True, point: np.nda
     if point is None:
         point = np.array([[140, 10]])
 
-    ax.scatter(*point.T, label="Unknown", marker="x", c="black", s=60)
+    scatter = ax.scatter(*point.T, label="Unknown", marker="x", c="black", s=60)
 
     activations = layer_2lp(point)[0]
 
-    max_linewidth = 9
-    min_linewidth = 1
+    max_linewidth = 10
+    min_linewidth = 2
 
-    for i, (label, color) in enumerate(zip(labels, colors)):
-        plot_hyperplane(
+    lines = []
+    arrows = []
+    for i, (class_, color) in enumerate(zip(classes, colors)):
+        _, artists = plot_hyperplane(
             xspace,
             u2lp_biases[i],
             *u2lp_weights[i],
@@ -177,11 +180,16 @@ def visualize_2lp_activations(save: bool = True, clf: bool = True, point: np.nda
             plot_kwargs={
                 **plot_kwargs,
                 "linewidth": max(activations[i] * max_linewidth, min_linewidth),
-                "label": label,
+                "label": class_ + " boundary",
             },
             quiver_kwargs=quiver_kwargs,
-            ax=ax
+            ax=ax,
+            return_artists=True,
         )
+        lines.append(artists["line"][0])
+        arrows.append(artists["arrows"])
+
+    ax.legend(loc="upper right")
 
     if save:
         savefig("apples_oranges_pears_activations.pdf")
@@ -190,146 +198,40 @@ def visualize_2lp_activations(save: bool = True, clf: bool = True, point: np.nda
     if clf:
         plt.clf()
 
+    return scatter, lines, arrows
+
+
+circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
 
 def visualize_2lp_activations_animated():
-    intercepts = np.array([-0.08808770030736923, -0.09143412113189697, -0.09384874999523163])
-
-    slopes = np.array([[-0.19972077, -0.03343868], [-0.021978999, 0.14851315], [0.20376714, -0.11762319]])
-
-    m = np.array([141.8463, 6.2363])
-    s = np.array([10.5088, 1.7896])
-
-    uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
-
-    plot_kwargs = {}
-    quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 8, "scale": 0.075, "scale_units": "dots"}
-
-    classes = ["Apple", "Orange", "Pear"]
-    labels = ["Apple boundary", "Orange boundary", "Pear boundary"]
-    colors = ["greenyellow", "orange", "forestgreen"]
-
     fig, (ax1, ax2) = plt.subplots(2, 1)
+    scatter, lines, _ = visualize_2lp_activations(False, False, ax=ax1)
 
-    ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black", alpha=0.25)
-    ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black", alpha=0.25)
-    ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20, alpha=0.25)
+    radius = 0.25
+    ann_center = (-1.3, 0)
+    fontsize = 13
+    circles = draw_ann(
+        layers=[2, 3],
+        radius=radius,
+        center=ann_center,
+        spacing=(0.5, 0.4),
+        ax=ax2,
+        circle_kwargs=circle_kwargs,
+        quiver_kwargs={"color": "k", "width": 0.016},
+    )
 
-    quivers = []
-    lines = []
-    xspace = np.linspace(x_lim[0], x_lim[1], 4)
-    for i, (label, color) in enumerate(zip(labels, colors)):
-        _, artists = plot_hyperplane(
-            xspace,
-            uintercepts[i],
-            *uslopes[i],
-            8,
-            c=color,
-            plot_kwargs={**plot_kwargs, "label": label},
-            quiver_kwargs=quiver_kwargs,
-            return_artists=True,
-            ax=ax1,
-        )
-        lines.append(artists["line"][0])
-        quivers.append(artists["arrows"])
-
-    point = np.array([[0, 0]], dtype=float)
-    scatter = ax1.scatter(*point.T, label="Unknown", marker="x", c="black", s=60, zorder=100)
-    centerx = np.mean(x_lim)
-    centery = np.mean(y_lim)
-
-    circles = []
-    circletexts = []
-    nnradius = 0.32
-    nodesy = 0
-    nodesx = -1.5
-    yspacing = 0.75
-    for pos, color, name in zip(
-        [(nodesx, nodesy + yspacing), (nodesx, nodesy), (nodesx, nodesy - yspacing)],
-        colors,
-        ["Appleness", "Orangeness", "Pearness"],
-    ):
-        circle = patches.Circle(pos, nnradius, facecolor=color, edgecolor="k")
-        ax2.add_patch(circle)
-        circles.append(circle)
-        circletexts.append(ax2.annotate("0", xy=pos, fontsize=12, ha="center", va="center"))
-        ax2.annotate(f"{name}", xy=(pos[0] + 0.5, pos[1]), fontsize=14, va="center")
-
-    ax2.annotate("Current classification", xy=(nodesx + 3.75, nodesy + yspacing), fontsize=14, ha="center")
-    currclasscircle = patches.Circle((nodesx + 3.75, nodesy), 0.6, facecolor="orange", edgecolor="k")
-    currclasstext = ax2.annotate("", xy=(nodesx + 3.75, 0), ha="center", va="center", fontsize=16)
-    ax2.add_patch(currclasscircle)
-
-    ax2.annotate("Model graph", (pos[0] - 1.25, nodesy + 1.3), va="center", fontsize=14)
-    xcircle = patches.Circle((nodesx - 1.25, nodesy + yspacing / 2), nnradius, facecolor=(0, 0, 0, 0), edgecolor="k")
-    ycircle = patches.Circle((nodesx - 1.25, nodesy - yspacing / 2), nnradius, facecolor=(0, 0, 0, 0), edgecolor="k")
-    ax2.add_patch(xcircle)
-    ax2.add_patch(ycircle)
-    xtext = ax2.annotate("", (nodesx - 1.25, nodesy + yspacing / 2), ha="center", va="center", fontsize=12)
-    ytext = ax2.annotate("", (nodesx - 1.25, nodesy - yspacing / 2), ha="center", va="center", fontsize=12)
-    ax2.annotate("Weight", (nodesx - 1.75, nodesy + yspacing / 2), ha="right", va="center", fontsize=14)
-    ax2.annotate("Diameter", (nodesx - 1.75, nodesy - yspacing / 2), ha="right", va="center", fontsize=14)
-
-    # Edges
-    for left_circle in (xcircle, ycircle):
-        for right_circle in circles:
-            temp = np.array([left_circle.get_center(), right_circle.get_center()])
-            diff = temp[1] - temp[0]
-            thing = (diff / np.linalg.norm(diff)) * nnradius
-            temp[0] = temp[0] + thing
-            temp[1] = temp[1] - thing
-            ax2.add_line(plt.Line2D(*temp.T, color="k", linewidth=1))
-
-    def forward(X: np.ndarray, intercepts: np.ndarray, slopes: np.ndarray):
-        z = intercepts + X @ slopes.T
-        z = z + abs(z.min())
-        z = z**2
-        z = z / z.sum()
-        return z
-
-    n = 300
-    pi2 = np.pi * 2
-    pbar = tqdm(total=n)
-
-    def step(i):
-        rad = i / n * pi2
-        point[0, 0] = centerx + 20 * math.cos(rad)
-        point[0, 1] = centery + 5 * math.sin(rad)
-        xtext.set_text(f"{point[0, 0]:.1f}")
-        ytext.set_text(f"{point[0, 1]:.1f}")
-        strengths = forward(point, uintercepts, uslopes)[0]
-        scatter.set_offsets(point)
-        for strength, line, quiver, circle, circletext in zip(strengths, lines, quivers, circles, circletexts):
-            line.set_linewidth(max(strength * 20, 1))
-            quiver.scale = max((1 - strength) * 0.1, 0.05)
-            circletext.set_text(f"{strength:.2f}")
-            circle.set_facecolor((*circle.get_facecolor()[:3], strength))
-
-        currclass = np.argmax(strengths)
-        currclasscircle.set_facecolor(colors[currclass])
-        currclasstext.set_text(classes[currclass])
-        pbar.update(1)
-
-        return (scatter, *lines, *quivers, *circletexts, *circles, currclasstext, currclasscircle, xtext, ytext)
-
-    ax1.set_xlabel("Weight (g)")
-    ax1.set_ylabel("Diameter (cm)")
-    ax1.set_xlim(*x_lim)
-    ax1.set_ylim(*y_lim)
-    ax1.set_aspect("equal")
-
-    ax2.axis("off")
     ax2.set_aspect("equal")
-    ax2.set_xlim(-5, 5)
-    ax2.set_ylim(-1.25, 1.3)
+    ax2.set_xlim(-3, 3)
+    ax2.set_ylim(-1, 1)
+    ax2.set_title("")
+    # ax2.set_xticks([])
+    # ax2.set_yticks([])
+    # ax2.axis("off")
 
-    fig.suptitle("Likelihoods of classes")
-    fig.set_figheight(7)
     fig.set_figwidth(10)
-    fig.tight_layout()
-    anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    # anim.save("figures/activations.gif", writer="ffmpeg", fps=24)
+    fig.set_figheight(8)
+
     plt.show()
-    plt.clf()
 
 
 def visualize_appleness_pearness():
@@ -761,8 +663,8 @@ if __name__ == "__main__":
     # visualize_data_set_with_orange_line()
     # visualize_two_lines()
     # visualize_data_with_2lp_lines()
-    visualize_2lp_activations()
-    # visualize_activations_animated()
+    # visualize_2lp_activations()
+    visualize_2lp_activations_animated()
     # visualize_appleness_pearness()
     # visualize_appleness_pearness_out_lines()
     # visualize_3lp_animated()
