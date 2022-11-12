@@ -6,12 +6,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib import patches
+from matplotlib.colors import to_rgb
 import math
 from tqdm import tqdm
 from itertools import chain
 from pathlib import Path
 import logging
-import cmath
 
 project_dir = Path(__file__).resolve().parent.parent
 figures_dir = project_dir / "visualization" / "figures"
@@ -56,9 +56,9 @@ quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 8, "scale": 0.05, "sc
 classes = np.array(["Apple", "Orange", "Pear"])
 colors = np.array(
     [
-        "greenyellow",
-        "orange",
-        "forestgreen",
+        to_rgb("greenyellow"),
+        to_rgb("orange"),
+        to_rgb("forestgreen"),
     ]
 )
 
@@ -153,6 +153,7 @@ def forward_sigmoid(X: np.ndarray, bias: np.ndarray, weights: np.ndarray) -> np.
 
 
 circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
+calc_linewidth = lambda x: max(x * 16, 2)
 
 
 def visualize_2lp_activations(
@@ -170,13 +171,8 @@ def visualize_2lp_activations(
     visualize_data_set(False, False, {"alpha": 0.5}, ax_upper)
 
     artists = {}
-
-    artists["scatter"] = scatter = ax_upper.scatter(*point.T, label="Unknown", marker="x", c="black", s=60)
-
+    artists["scatter"] = ax_upper.scatter(*point.T, label="Unknown", marker="x", c="black", s=70)
     activations = forward_sigmoid(point, u2lp_biases, u2lp_weights)[0]
-
-    max_linewidth = 16
-    min_linewidth = 2
 
     # Lines
     artists["lines"] = lines = []
@@ -190,7 +186,7 @@ def visualize_2lp_activations(
             c=color,
             plot_kwargs={
                 **plot_kwargs,
-                "linewidth": max(activations[i] * max_linewidth, min_linewidth),
+                "linewidth": calc_linewidth(activations[i]),
                 "label": class_ + " boundary",
             },
             quiver_kwargs=quiver_kwargs,
@@ -204,7 +200,7 @@ def visualize_2lp_activations(
     radius = 0.25
     ann_center = (-1.3, -0.1)
     fontsize = 13
-    artists["circles"] = circles = draw_ann(
+    circles = draw_ann(
         layers=[2, 3],
         radius=radius,
         center=ann_center,
@@ -216,9 +212,13 @@ def visualize_2lp_activations(
     ccenters = [[np.array(circle.get_center()) for circle in layer] for layer in circles]
 
     # Output node colors
-    circles[1][0].set_facecolor(colors[0])
-    circles[1][1].set_facecolor(colors[1])
-    circles[1][2].set_facecolor(colors[2])
+    circles[1][0].set_facecolor((*colors[0], activations[0]))
+    circles[1][1].set_facecolor((*colors[1], activations[1]))
+    circles[1][2].set_facecolor((*colors[2], activations[2]))
+
+    artists["out0_circle"] = circles[1][0]
+    artists["out1_circle"] = circles[1][1]
+    artists["out2_circle"] = circles[1][2]
 
     # Static text in ax_lower
     ax_lower.annotate("Weight", ccenters[0][0] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
@@ -229,42 +229,36 @@ def visualize_2lp_activations(
     ax_lower.annotate("Orangeness", ccenters[1][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
 
     # Text inside nodes
-    artists["x_text"] = x_text = ax_lower.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize)
-    artists["y_text"] = y_text = ax_lower.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize)
-    artists["out1_text"] = out1_text = ax_lower.annotate(
-        "o1", ccenters[1][0], ha="center", va="center", fontsize=fontsize
+    artists["x_text"] = x_text = ax_lower.annotate(
+        f"{point[0, 0]:.1f}", ccenters[0][0], ha="center", va="center", fontsize=fontsize
     )
-    artists["out2_text"] = out2_text = ax_lower.annotate(
-        "o2", ccenters[1][1], ha="center", va="center", fontsize=fontsize
+    artists["y_text"] = y_text = ax_lower.annotate(
+        f"{point[0, 1]:.1f}", ccenters[0][1], ha="center", va="center", fontsize=fontsize
     )
-    artists["out3_text"] = out3_text = ax_lower.annotate(
-        "o3", ccenters[1][2], ha="center", va="center", fontsize=fontsize
+    artists["out0_text"] = out1_text = ax_lower.annotate(
+        f"{activations[0]:.2f}", ccenters[1][0], ha="center", va="center", fontsize=fontsize
     )
-
-    x_text.set_text(f"{point[0, 0]:.1f}")
-    y_text.set_text(f"{point[0, 1]:.1f}")
-
-    out1_text.set_text(f"{activations[0]:.2f}")
-    out2_text.set_text(f"{activations[1]:.2f}")
-    out3_text.set_text(f"{activations[2]:.2f}")
-    circles[1][0].set_facecolor((*circles[1][0].get_facecolor()[:3], activations[0]))
-    circles[1][1].set_facecolor((*circles[1][1].get_facecolor()[:3], activations[1]))
-    circles[1][2].set_facecolor((*circles[1][2].get_facecolor()[:3], activations[2]))
+    artists["out1_text"] = out2_text = ax_lower.annotate(
+        f"{activations[1]:.2f}", ccenters[1][1], ha="center", va="center", fontsize=fontsize
+    )
+    artists["out2_text"] = out3_text = ax_lower.annotate(
+        f"{activations[2]:.2f}", ccenters[1][2], ha="center", va="center", fontsize=fontsize
+    )
 
     # Current class node
+    curr_class = np.argmax(activations)
     class_ccenter = np.array([1.4, 0])
     class_cradius = radius * 1.75
     ax_lower.annotate(
         "Current classification", class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14
     )
     artists["class_circle"] = class_circle = patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs)
-    artists["class_text"] = class_text = ax_lower.annotate(
-        "Apple", class_ccenter, ha="center", va="center", fontsize=14
-    )
-    ax_lower.add_patch(class_circle)
-    curr_class = np.argmax(activations)
-    class_text.set_text(classes[curr_class])
     class_circle.set_facecolor(colors[curr_class])
+    ax_lower.add_patch(class_circle)
+
+    artists["class_text"] = class_text = ax_lower.annotate(
+        classes[curr_class], class_ccenter, ha="center", va="center", fontsize=14
+    )
 
     ax_upper.legend(loc="lower right")
     ax_upper.set_title("")
@@ -286,11 +280,41 @@ def visualize_2lp_activations(
     if clf:
         plt.clf()
 
-    return scatter, lines, arrows
+    return fig, (ax_upper, ax_lower), artists
 
 
 def visualize_2lp_activations_animated():
-    pass
+    fig, (ax_upper, ax_lower), artists = visualize_2lp_activations(False, False)
+
+    n = 300  # Animation steps
+    pi2 = np.pi * 2
+    pbar = tqdm(total=n + 1, disable=False)
+    artists_to_animate = pd.core.common.flatten(artists.values())
+
+    def step(i: int):
+        rad = pi2 * i / n
+        point = (m + (np.cos(rad) * 20, np.sin(rad) * 5))[None]
+        artists["scatter"].set_offsets(point)
+        activations = forward_sigmoid(point, u2lp_biases, u2lp_weights)[0]
+
+        for i in range(3):
+            artists[f"out{i}_text"].set_text(f"{activations[i]:.2f}")
+            artists[f"out{i}_circle"].set_facecolor((*colors[i], activations[i]))
+            artists["lines"][i].set_linewidth(calc_linewidth(activations[i]))
+
+        artists["x_text"].set_text(f"{point[0, 0]:.1f}")
+        artists["y_text"].set_text(f"{point[0, 1]:.1f}")
+
+        curr_class = np.argmax(activations)
+        artists["class_text"].set_text(classes[curr_class])
+        artists["class_circle"].set_facecolor(colors[curr_class])
+
+        pbar.update(1)
+        return artists_to_animate
+
+    ax_upper.get_legend().remove()
+    anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
+    plt.show()
 
 
 def visualize_appleness_pearness():
@@ -722,8 +746,8 @@ if __name__ == "__main__":
     # visualize_data_set_with_orange_line()
     # visualize_two_lines()
     # visualize_data_with_2lp_lines()
-    visualize_2lp_activations()
-    # visualize_2lp_activations_animated()
+    # visualize_2lp_activations()
+    visualize_2lp_activations_animated()
     # visualize_appleness_pearness()
     # visualize_appleness_pearness_out_lines()
     # visualize_3lp_animated()
