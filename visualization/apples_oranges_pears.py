@@ -229,25 +229,25 @@ def visualize_2lp_activations(
     ax_lower.annotate("Orangeness", ccenters[1][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
 
     # Text inside nodes
-    artists["x_text"] = x_text = ax_lower.annotate(
+    artists["x_text"] = ax_lower.annotate(
         f"{point[0, 0]:.1f}", ccenters[0][0], ha="center", va="center", fontsize=fontsize
     )
-    artists["y_text"] = y_text = ax_lower.annotate(
+    artists["y_text"] = ax_lower.annotate(
         f"{point[0, 1]:.1f}", ccenters[0][1], ha="center", va="center", fontsize=fontsize
     )
-    artists["out0_text"] = out1_text = ax_lower.annotate(
+    artists["out0_text"] = ax_lower.annotate(
         f"{activations[0]:.2f}", ccenters[1][0], ha="center", va="center", fontsize=fontsize
     )
-    artists["out1_text"] = out2_text = ax_lower.annotate(
+    artists["out1_text"] = ax_lower.annotate(
         f"{activations[1]:.2f}", ccenters[1][1], ha="center", va="center", fontsize=fontsize
     )
-    artists["out2_text"] = out3_text = ax_lower.annotate(
+    artists["out2_text"] = ax_lower.annotate(
         f"{activations[2]:.2f}", ccenters[1][2], ha="center", va="center", fontsize=fontsize
     )
 
     # Current class node
     curr_class = np.argmax(activations)
-    class_ccenter = np.array([1.4, 0])
+    class_ccenter = np.array([1.2, 0])
     class_cradius = radius * 1.75
     ax_lower.annotate(
         "Current classification", class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14
@@ -256,9 +256,7 @@ def visualize_2lp_activations(
     class_circle.set_facecolor(colors[curr_class])
     ax_lower.add_patch(class_circle)
 
-    artists["class_text"] = class_text = ax_lower.annotate(
-        classes[curr_class], class_ccenter, ha="center", va="center", fontsize=14
-    )
+    artists["class_text"] = ax_lower.annotate(classes[curr_class], class_ccenter, ha="center", va="center", fontsize=14)
 
     ax_upper.legend(loc="lower right")
     ax_upper.set_title("")
@@ -286,11 +284,11 @@ def visualize_2lp_activations(
 def visualize_2lp_activations_animated():
     fig, (ax_upper, ax_lower), artists = visualize_2lp_activations(False, False)
 
+    logger.info("Rendering 2LP animation")
     n = 300  # Animation steps
     pi2 = np.pi * 2
     pbar = tqdm(total=n + 1, disable=False)
     artists_to_animate = pd.core.common.flatten(artists.values())
-
     def step(i: int):
         rad = pi2 * i / n
         point = (m + (np.cos(rad) * 20, np.sin(rad) * 5))[None]
@@ -314,7 +312,10 @@ def visualize_2lp_activations_animated():
 
     ax_upper.get_legend().remove()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    plt.show()
+    file = figures_dir / "2lp.gif"
+    anim.save(file, writer="ffmpeg", fps=60)
+    logger.info(f"Saved animation at {file}")
+    # plt.show()
 
 
 def visualize_appleness_pearness():
