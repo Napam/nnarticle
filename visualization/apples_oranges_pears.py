@@ -44,9 +44,14 @@ model_weights_3lp = json_to_weights(project_dir / "models" / "weights" / "3LP.js
 uhidden_biases, uhidden_weights = unnormalize_planes(
     m, s, model_weights_3lp["hidden.bias"], model_weights_3lp["hidden.weight"]
 )
-uoutput_biases, uoutput_weights = unnormalize_planes(
-    m, s, model_weights_3lp["output.bias"], model_weights_3lp["output.weight"]
-)
+output_biases, output_weights = model_weights_3lp["output.bias"], model_weights_3lp["output.weight"]
+
+
+def forward_sigmoid(X: np.ndarray, bias: np.ndarray, weights: np.ndarray) -> np.ndarray:
+    z = bias + X @ weights.T
+    return 1 / (1 + np.exp(-z))
+
+h1 = forward_sigmoid(X, uhidden_biases, uhidden_weights)
 
 xspace = torch.linspace(x_lim[0], x_lim[1], 4)
 
@@ -69,12 +74,33 @@ def savefig(file: str | Path):
     logger.info(f"Created figure {file}")
 
 
-def visualize_data_set(save: bool = True, clf: bool = True, scatter_kwargs: dict = None, ax: plt.Axes = None):
+def viz_decorator(file: Path, animation: bool = False):
+    def decorator(f):
+        def wrapper(save: bool = True, clf: bool = True, **kwargs):
+            return_value = f(**kwargs)
+
+            if animation:
+                anim.save(file, writer="ffmpeg", fps=60)
+                logger.info(f"Saved animation at {file}")
+            else:
+                if save:
+                    savefig(file)
+
+            if clf:
+                plt.clf()
+
+            return return_value
+        return wrapper
+    return decorator
+
+
+@viz_decorator("dataset_apples_oranges_pears.pdf")
+def visualize_data_set(scatter_kwargs: dict = None, ax: plt.Axes = None):
     scatter_kwargs = scatter_kwargs or {}
 
     if ax is None:
         ax = plt.gca()
-        plt.gcf().set_figheight(10)
+        plt.gcf().set_figheight(5)
         plt.gcf().set_figwidth(10)
 
     ax.set_xlabel("Weight (g)")
@@ -88,40 +114,36 @@ def visualize_data_set(save: bool = True, clf: bool = True, scatter_kwargs: dict
     ax.set_aspect("equal")
 
     plt.title("Comparing apples, oranges and pears")
-
-    if save:
-        savefig("dataset_apples_oranges_pears.pdf")
-
-    if clf:
-        plt.clf()
+    plt.show()
+    return ax
 
 
+@viz_decorator("apples_oranges_pears_with_apple_line.pdf")
 def visualize_data_with_apple_line():
     visualize_data_set(False, False)
     plt.title("Comparing apples, oranges and pears with a single decision boundary")
 
     plot_hyperplane(xspace, uhidden_biases[0], *uhidden_weights[0], 10, c="k", quiver_kwargs=quiver_kwargs)
 
-    savefig("apples_oranges_pears_with_apple_line.pdf")
-
     # plt.show()
-    plt.clf()
 
 
-def visualize_data_with_hidden_lines():
-    visualize_data_set(False, False)
+@viz_decorator("apples_oranges_pears_with_hidden_lines.pdf")
+def visualize_data_with_hidden_lines(ax: plt.Axes = None):
+    if ax is None:
+        ax = plt.gca()
+
+    visualize_data_set(False, False, ax=ax)
     plt.title("Decision boundaries for apples and pears")
 
     for (color, bias, weights) in zip(colors[[0, 2]], uhidden_biases, uhidden_weights):
-        plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs)
-
-    savefig("apples_oranges_pears_hidden_lines.pdf")
+        plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs, ax=ax)
 
     # plt.show()
-    plt.clf()
 
 
-def visualize_data_with_2lp_lines(save: bool = True, clf: bool = True):
+@viz_decorator("apples_oranges_pears_2lp_lines.pdf")
+def visualize_data_with_2lp_lines():
     visualize_data_set(False, False)
     plt.title("Decision boundaries for apples, oranges and pears")
 
@@ -138,26 +160,16 @@ def visualize_data_with_2lp_lines(save: bool = True, clf: bool = True):
 
     plt.legend()
 
-    if save:
-        savefig("apples_oranges_pears_2lp_lines.pdf")
-
     # plt.show()
-
-    if clf:
-        plt.clf()
-
-
-def forward_sigmoid(X: np.ndarray, bias: np.ndarray, weights: np.ndarray) -> np.ndarray:
-    z = bias + X @ weights.T
-    return 1 / (1 + np.exp(-z))
 
 
 circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
 calc_linewidth = lambda x: max(x * 16, 2)
 
 
+@viz_decorator("apples_oranges_pears_2lp_activations.pdf")
 def visualize_2lp_activations(
-    save: bool = True, clf: bool = True, point: np.ndarray = None, axes: tuple[plt.Axes, plt.Axes] = None
+    point: np.ndarray = None, axes: tuple[plt.Axes, plt.Axes] = None
 ):
     if axes is None:
         fig, (ax_upper, ax_lower) = plt.subplots(2, 1, figsize=(10, 7))
@@ -271,16 +283,11 @@ def visualize_2lp_activations(
 
     fig.suptitle("Activations")
 
-    if save:
-        savefig("apples_oranges_pears_activations.pdf")
-
     # plt.show()
-    if clf:
-        plt.clf()
 
     return fig, (ax_upper, ax_lower), artists
 
-
+@viz_decorator("2lp_activations.gif")
 def visualize_2lp_activations_animated():
     fig, (ax_upper, ax_lower), artists = visualize_2lp_activations(False, False)
 
@@ -312,184 +319,66 @@ def visualize_2lp_activations_animated():
 
     ax_upper.get_legend().remove()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    file = figures_dir / "2lp.gif"
-    anim.save(file, writer="ffmpeg", fps=60)
-    logger.info(f"Saved animation at {file}")
     # plt.show()
 
 
-def visualize_appleness_pearness():
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+def visualize_appleness_pearness(save: bool = True, clf: bool = True):
+    fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(10, 5.5))
+    visualize_data_with_hidden_lines(False, False, ax=ax_left)
 
-    intercepts = np.array(
-        [
-            -1.9472151,  # Apple
-            -2.260901,  # Pear
-        ]
-    )
+    ax_left.set_xlabel("Weight (g)")
+    ax_left.set_ylabel("Diameter (cm)")
+    ax_left.set_aspect("equal")
+    ax_left.set_title("Lines for apples and pears")
+    ax_left.set_ylim(*y_lim)
+    ax_left.get_legend().remove()
 
-    slopes = np.array(
-        [
-            [-4.1687274, -1.3713175],
-            [4.5323997, -1.6058096],
-        ]
-    )
+    ax_right.scatter(*h1[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
+    ax_right.scatter(*h1[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
+    ax_right.scatter(*h1[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
+    ax_right.set_xlabel("Appleness")
+    ax_right.set_ylabel("Pearness")
+    ax_right.set_title("Activation space")
+    ax_right.set_aspect("equal")
+    ax_right.legend(loc="upper right")
 
-    m = np.array([141.8463, 6.2363])
-    s = np.array([10.5088, 1.7896])
-
-    xspace = np.linspace(x_lim[0], x_lim[1], 4)
-    uintercepts, uslopes = unnormalize_planes(m, s, intercepts, slopes)
-
-    plot_kwargs = {}
-    quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
-
-    classes = ["Apple", "Pear"]
-    labels = ["Apple boundary", "Pear boundary"]
-    colors = ["greenyellow", "forestgreen"]
-
-    xspace = np.linspace(x_lim[0], x_lim[1], 4)
-    ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
-    for i, (label, color) in enumerate(zip(labels, colors)):
-        _, artists = plot_hyperplane(
-            xspace,
-            uintercepts[i],
-            *uslopes[i],
-            5,
-            c=color,
-            plot_kwargs={**plot_kwargs, "label": label},
-            quiver_kwargs=quiver_kwargs,
-            return_artists=True,
-            ax=ax1,
-        )
-
-    outs = uintercepts + X @ uslopes.T
-    outs = 1 / (1 + np.exp(-outs))
-
-    ax1.set_xlabel("Weight (g)")
-    ax1.set_ylabel("Diameter (cm)")
-    ax1.set_aspect("equal")
-    ax1.set_title("Lines for apples and pears")
-    ax1.set_ylim(*y_lim)
-
-    ax2.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    ax2.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    ax2.scatter(*outs[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
-    ax2.set_xlabel("Appleness")
-    ax2.set_ylabel("Pearness")
-    ax2.set_title("Activation space")
-    ax2.set_aspect("equal")
-
-    fig.tight_layout(rect=[0, 0, 1, 0.90])
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
     fig.suptitle("Visualizing appleness and pearness for each point")
-    plt.savefig("figures/appleness_pearness.pdf")
+
+    if save:
+        savefig(figures_dir / "appleness_pearness.pdf")
+    
     # plt.show()
-    plt.clf()
+
+    if clf:
+        plt.clf()
+
+    return (ax_left, ax_right)
 
 
-def visualize_appleness_pearness_out_lines():
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-
-    hidden_biases = np.array(
-        [
-            -1.9472151,  # Apple
-            -2.260901,  # Pear
-        ]
-    )
-
-    hidden_weights = np.array(
-        [
-            [-4.1687274, -1.3713175],
-            [4.5323997, -1.6058096],
-        ]
-    )
-
-    output_biases = np.array(
-        [
-            -2.0450604,  # Apple
-            -2.1543744,  # Pear
-            2.6014535,  # Orange
-        ]
-    )
-
-    output_weights = np.array(
-        [
-            [5.4452653, -1.87916],
-            [-2.0285792, 5.59163],
-            [-4.693778, -5.0045652],
-        ]
-    )
-
-    m = np.array([141.8463, 6.2363])
-    s = np.array([10.5088, 1.7896])
-
-    uhidden_biases, uhidden_weights = unnormalize_planes(m, s, hidden_biases, hidden_weights)
-
-    plot_kwargs = {}
-    quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 4, "scale": 0.075, "scale_units": "dots"}
-
-    classes = ["Apple", "Pear", "Orange"]
-    labels = ["Apple boundary", "Pear boundary", "Orange boundary"]
-    colors = ["greenyellow", "forestgreen", "orange"]
-    linestyles = [None, "--", "-."]
-
-    xspace = np.linspace(x_lim[0], x_lim[1], 4)
-    ax1.scatter(*X[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    ax1.scatter(*X[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    ax1.scatter(*X[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
-
-    for i, (label, color, linestyle) in enumerate(zip(labels[:2], colors[:2], linestyles[:2])):
-        _ = plot_hyperplane(
-            xspace,
-            uhidden_biases[i],
-            *uhidden_weights[i],
-            5,
-            c=color,
-            plot_kwargs={**plot_kwargs, "label": label, "linestyle": linestyle},
-            quiver_kwargs=quiver_kwargs,
-            ax=ax1,
-        )
-
-    outs = uhidden_biases + X @ uhidden_weights.T
-    outs = 1 / (1 + np.exp(-outs))
-
-    ax1.set_xlabel("Weight (g)")
-    ax1.set_ylabel("Diameter (cm)")
-    ax1.set_aspect("equal")
-    ax1.set_title("Lines for apples and pears")
-    ax1.set_ylim(*y_lim)
-
-    ax2.scatter(*outs[y == 0].T, label="Apple", marker="^", c="greenyellow", edgecolor="black")
-    ax2.scatter(*outs[y == 1].T, label="Orange", marker="o", c="orange", edgecolor="black")
-    ax2.scatter(*outs[y == 2].T, label="Pear", marker="s", c="forestgreen", edgecolor="black", s=20)
-    outlims = get_lims(outs)
-    xspace2 = np.linspace(*outlims[0], 10)
-    for i, (label, color, linestyle) in enumerate(zip(labels, colors, linestyles)):
+def visualize_appleness_pearness_out_lines(save: bool = True, clf: bool = True):
+    (ax_left, ax_right) = visualize_appleness_pearness(False, False)
+    h1lims = get_lims(h1)
+    xspace = np.linspace(*h1lims[0], 4)
+    for i, (label, color) in enumerate(zip(classes, colors)):
         plot_hyperplane(
-            xspace2,
+            xspace,
             output_biases[i],
             *output_weights[i],
             6,
             c=color,
-            ax=ax2,
+            ax=ax_right,
             quiver_kwargs=quiver_kwargs,
-            plot_kwargs={"linestyle": linestyle, "label": label},
+            plot_kwargs={"label": label},
         )
 
-    ax2.set_xlabel("Appleness")
-    ax2.set_ylabel("Pearness")
-    ax2.set_title("Activation space")
-    ax2.set_xlim(*outlims[0])
-    ax2.set_ylim(*outlims[1])
-    ax2.set_aspect("equal")
-    ax2.legend(loc="upper right")
+    ax_right.set_xlim(*h1lims[0])
+    ax_right.set_ylim(*h1lims[1])
 
-    fig.tight_layout(rect=[0, 0, 1, 0.85])
-    fig.suptitle("Visualizing appleness and pearness for each point\nwith decision boundaries in the activation space")
-    plt.savefig("figures/appleness_pearness_with_out_lines.pdf")
-    # plt.show()
+    # if save:
+    # plt.savefig("figures/appleness_pearness_with_out_lines.pdf")
+
+    plt.show()
     plt.clf()
 
 
@@ -743,12 +632,12 @@ if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.setLevel(logging.INFO)
 
-    # visualize_data_set()
+    visualize_data_set(False, False)
     # visualize_data_set_with_orange_line()
     # visualize_two_lines()
     # visualize_data_with_2lp_lines()
     # visualize_2lp_activations()
-    visualize_2lp_activations_animated()
+    # visualize_2lp_activations_animated()
     # visualize_appleness_pearness()
     # visualize_appleness_pearness_out_lines()
     # visualize_3lp_animated()
