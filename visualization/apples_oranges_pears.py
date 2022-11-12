@@ -147,9 +147,12 @@ def visualize_data_with_2lp_lines(save: bool = True, clf: bool = True):
         plt.clf()
 
 
-def layer_2lp(X: np.ndarray):
-    z = u2lp_biases + X @ u2lp_weights.T
+def forward_sigmoid(X: np.ndarray, bias: np.ndarray, weights: np.ndarray) -> np.ndarray:
+    z = bias + X @ weights.T
     return 1 / (1 + np.exp(-z))
+
+
+circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
 
 
 def visualize_2lp_activations(
@@ -165,18 +168,21 @@ def visualize_2lp_activations(
         point = np.array([[140, 10]])
 
     visualize_data_set(False, False, {"alpha": 0.5}, ax_upper)
-    scatter = ax_upper.scatter(*point.T, label="Unknown", marker="x", c="black", s=60)
 
-    activations = layer_2lp(point)[0]
+    artists = {}
+
+    artists["scatter"] = scatter = ax_upper.scatter(*point.T, label="Unknown", marker="x", c="black", s=60)
+
+    activations = forward_sigmoid(point, u2lp_biases, u2lp_weights)[0]
 
     max_linewidth = 16
     min_linewidth = 2
 
     # Lines
-    lines = []
-    arrows = []
+    artists["lines"] = lines = []
+    artists["arrows"] = arrows = []
     for i, (class_, color) in enumerate(zip(classes, colors)):
-        _, artists = plot_hyperplane(
+        _, artists_ = plot_hyperplane(
             xspace,
             u2lp_biases[i],
             *u2lp_weights[i],
@@ -191,15 +197,14 @@ def visualize_2lp_activations(
             ax=ax_upper,
             return_artists=True,
         )
-        lines.append(artists["line"][0])
-        arrows.append(artists["arrows"])
+        lines.append(artists_["line"][0])
+        arrows.append(artists_["arrows"])
 
     # Model graph
     radius = 0.25
     ann_center = (-1.3, -0.1)
     fontsize = 13
-    circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
-    circles = draw_ann(
+    artists["circles"] = circles = draw_ann(
         layers=[2, 3],
         radius=radius,
         center=ann_center,
@@ -224,11 +229,11 @@ def visualize_2lp_activations(
     ax_lower.annotate("Orangeness", ccenters[1][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
 
     # Text inside nodes
-    x_text = ax_lower.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize)
-    y_text = ax_lower.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize)
-    out1_text = ax_lower.annotate("o1", ccenters[1][0], ha="center", va="center", fontsize=fontsize)
-    out2_text = ax_lower.annotate("o2", ccenters[1][1], ha="center", va="center", fontsize=fontsize)
-    out3_text = ax_lower.annotate("o3", ccenters[1][2], ha="center", va="center", fontsize=fontsize)
+    artists["x_text"] = x_text = ax_lower.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize)
+    artists["y_text"] = y_text = ax_lower.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize)
+    artists["out1_text"] = out1_text = ax_lower.annotate("o1", ccenters[1][0], ha="center", va="center", fontsize=fontsize)
+    artists["out2_text"] = out2_text = ax_lower.annotate("o2", ccenters[1][1], ha="center", va="center", fontsize=fontsize)
+    artists["out3_text"] = out3_text = ax_lower.annotate("o3", ccenters[1][2], ha="center", va="center", fontsize=fontsize)
 
     x_text.set_text(f"{point[0, 0]:.1f}")
     y_text.set_text(f"{point[0, 1]:.1f}")
@@ -246,8 +251,8 @@ def visualize_2lp_activations(
     ax_lower.annotate(
         "Current classification", class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14
     )
-    class_circle = patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs)
-    class_text = ax_lower.annotate("Apple", class_ccenter, ha="center", va="center", fontsize=14)
+    artists["class_circle"] = class_circle = patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs)
+    artists["class_text"] = class_text = ax_lower.annotate("Apple", class_ccenter, ha="center", va="center", fontsize=14)
     ax_lower.add_patch(class_circle)
     curr_class = np.argmax(activations)
     class_text.set_text(classes[curr_class])
@@ -262,108 +267,22 @@ def visualize_2lp_activations(
     ax_lower.set_title("")
     ax_lower.set_xticks([])
     ax_lower.set_yticks([])
-    ax_lower.axis('off')
+    ax_lower.axis("off")
 
     fig.suptitle("Activations")
 
     if save:
         savefig("apples_oranges_pears_activations.pdf")
 
-    plt.show()
+    # plt.show()
     if clf:
         plt.clf()
 
     return scatter, lines, arrows
 
 
-def forward_sigmoid(X: np.ndarray, bias: np.ndarray, weights: np.ndarray) -> np.ndarray:
-    z = bias + X @ weights.T
-    return 1 / (1 + np.exp(-z))
-
-
-circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
-
-
 def visualize_2lp_activations_animated():
-    fig, (ax1, ax2) = plt.subplots(2, 1)
-    scatter, lines, _ = visualize_2lp_activations(False, False, ax=ax1)
-    animated_artists = [scatter, *lines]
-
-    radius = 0.25
-    ann_center = (-1.3, -0.1)
-    fontsize = 13
-    circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
-    circles = draw_ann(
-        layers=[2, 3],
-        radius=radius,
-        center=ann_center,
-        spacing=(0.5, 0.3),
-        ax=ax2,
-        circle_kwargs=circle_kwargs,
-        quiver_kwargs={"color": "k", "width": 0.016},
-    )
-    animated_artists.extend(chain.from_iterable(circles[1:]))
-    ccenters = [[np.array(circle.get_center()) for circle in layer] for layer in circles]
-
-    # Output node colors
-    circles[1][0].set_facecolor(colors[0])
-    circles[1][1].set_facecolor(colors[1])
-    circles[1][2].set_facecolor(colors[2])
-
-    # Static text in ax2
-    ax2.annotate("Weight", ccenters[0][0] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
-    ax2.annotate("Diameter", ccenters[0][1] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
-    ax2.annotate("Model graph", ccenters[0][0] + [0.4, 0.7], ha="center", va="center", fontsize=14)
-    ax2.annotate("Appleness", ccenters[1][0] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-    ax2.annotate("Pearness", ccenters[1][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-    ax2.annotate("Orangeness", ccenters[1][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-
-    # Text inside nodes
-    animated_artists.extend(
-        [
-            x_text := ax2.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize),
-            y_text := ax2.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize),
-            out1_text := ax2.annotate("o1", ccenters[1][0], ha="center", va="center", fontsize=fontsize),
-            out2_text := ax2.annotate("o2", ccenters[1][1], ha="center", va="center", fontsize=fontsize),
-            out3_text := ax2.annotate("o3", ccenters[1][2], ha="center", va="center", fontsize=fontsize),
-        ]
-    )
-
-    point = np.array([[0, 0]], dtype=np.float32)
-
-    max_linewidth = 16
-    min_linewidth = 2
-
-    n = 300
-    pi2 = np.pi * 2
-
-    def step(i: int):
-        rad = pi2 * i / n
-        point[:] = m + (np.cos(rad) * 20, np.sin(rad) * 5)
-        scatter.set_offsets(point)
-        activations = forward_sigmoid(point, u2lp_biases, u2lp_weights)[0]
-        for line, activation in zip(lines, activations):
-            line.set_linewidth(max(activation * max_linewidth, min_linewidth))
-
-        return animated_artists
-
-    fig.tight_layout()
-    anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-
-    ax1.get_legend().remove()
-
-    ax2.set_aspect("equal")
-    ax2.set_xlim(-3, 3)
-    ax2.set_ylim(-1, 1)
-    ax2.set_title("")
-    # ax2.set_xticks([])
-    # ax2.set_yticks([])
-    # ax2.axis("off")
-
-    fig.set_figwidth(10)
-    fig.set_figheight(8)
-
-    plt.show()
+    pass
 
 
 def visualize_appleness_pearness():
