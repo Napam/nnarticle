@@ -231,9 +231,15 @@ def visualize_2lp_activations(
     # Text inside nodes
     artists["x_text"] = x_text = ax_lower.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize)
     artists["y_text"] = y_text = ax_lower.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize)
-    artists["out1_text"] = out1_text = ax_lower.annotate("o1", ccenters[1][0], ha="center", va="center", fontsize=fontsize)
-    artists["out2_text"] = out2_text = ax_lower.annotate("o2", ccenters[1][1], ha="center", va="center", fontsize=fontsize)
-    artists["out3_text"] = out3_text = ax_lower.annotate("o3", ccenters[1][2], ha="center", va="center", fontsize=fontsize)
+    artists["out1_text"] = out1_text = ax_lower.annotate(
+        "o1", ccenters[1][0], ha="center", va="center", fontsize=fontsize
+    )
+    artists["out2_text"] = out2_text = ax_lower.annotate(
+        "o2", ccenters[1][1], ha="center", va="center", fontsize=fontsize
+    )
+    artists["out3_text"] = out3_text = ax_lower.annotate(
+        "o3", ccenters[1][2], ha="center", va="center", fontsize=fontsize
+    )
 
     x_text.set_text(f"{point[0, 0]:.1f}")
     y_text.set_text(f"{point[0, 1]:.1f}")
@@ -252,7 +258,9 @@ def visualize_2lp_activations(
         "Current classification", class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14
     )
     artists["class_circle"] = class_circle = patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs)
-    artists["class_text"] = class_text = ax_lower.annotate("Apple", class_ccenter, ha="center", va="center", fontsize=14)
+    artists["class_text"] = class_text = ax_lower.annotate(
+        "Apple", class_ccenter, ha="center", va="center", fontsize=14
+    )
     ax_lower.add_patch(class_circle)
     curr_class = np.argmax(activations)
     class_text.set_text(classes[curr_class])
