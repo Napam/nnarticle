@@ -156,8 +156,10 @@ def visualize_2lp_activations(
     save: bool = True, clf: bool = True, point: np.ndarray = None, axes: tuple[plt.Axes, plt.Axes] = None
 ):
     if axes is None:
-        fig, (ax_upper, ax_bottom) = plt.subplots(2, 1, figsize=(10, 7))
+        fig, (ax_upper, ax_lower) = plt.subplots(2, 1, figsize=(10, 7))
         fig.tight_layout()
+    else:
+        ax_upper, ax_lower = axes
 
     if point is None:
         point = np.array([[140, 10]])
@@ -170,6 +172,7 @@ def visualize_2lp_activations(
     max_linewidth = 16
     min_linewidth = 2
 
+    # Lines
     lines = []
     arrows = []
     for i, (class_, color) in enumerate(zip(classes, colors)):
@@ -191,6 +194,7 @@ def visualize_2lp_activations(
         lines.append(artists["line"][0])
         arrows.append(artists["arrows"])
 
+    # Model graph
     radius = 0.25
     ann_center = (-1.3, -0.1)
     fontsize = 13
@@ -200,7 +204,7 @@ def visualize_2lp_activations(
         radius=radius,
         center=ann_center,
         spacing=(0.5, 0.3),
-        ax=ax_bottom,
+        ax=ax_lower,
         circle_kwargs=circle_kwargs,
         quiver_kwargs={"color": "k", "width": 0.016},
     )
@@ -211,41 +215,54 @@ def visualize_2lp_activations(
     circles[1][1].set_facecolor(colors[1])
     circles[1][2].set_facecolor(colors[2])
 
-    # Static text in ax_bottom
-    ax_bottom.annotate("Weight", ccenters[0][0] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
-    ax_bottom.annotate("Diameter", ccenters[0][1] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
-    ax_bottom.annotate("Model graph", ccenters[0][0] + [0.4, 0.7], ha="center", va="center", fontsize=14)
-    ax_bottom.annotate("Appleness", ccenters[1][0] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-    ax_bottom.annotate("Pearness", ccenters[1][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-    ax_bottom.annotate("Orangeness", ccenters[1][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    # Static text in ax_lower
+    ax_lower.annotate("Weight", ccenters[0][0] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
+    ax_lower.annotate("Diameter", ccenters[0][1] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
+    ax_lower.annotate("Model graph", ccenters[0][0] + [0.4, 0.7], ha="center", va="center", fontsize=14)
+    ax_lower.annotate("Appleness", ccenters[1][0] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_lower.annotate("Pearness", ccenters[1][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_lower.annotate("Orangeness", ccenters[1][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
 
     # Text inside nodes
-    x_text = (ax_bottom.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize),)
-    y_text = (ax_bottom.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize),)
-    out1_text = (ax_bottom.annotate("o1", ccenters[1][0], ha="center", va="center", fontsize=fontsize),)
-    out2_text = (ax_bottom.annotate("o2", ccenters[1][1], ha="center", va="center", fontsize=fontsize),)
-    out3_text = (ax_bottom.annotate("o3", ccenters[1][2], ha="center", va="center", fontsize=fontsize),)
+    x_text = ax_lower.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize)
+    y_text = ax_lower.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize)
+    out1_text = ax_lower.annotate("o1", ccenters[1][0], ha="center", va="center", fontsize=fontsize)
+    out2_text = ax_lower.annotate("o2", ccenters[1][1], ha="center", va="center", fontsize=fontsize)
+    out3_text = ax_lower.annotate("o3", ccenters[1][2], ha="center", va="center", fontsize=fontsize)
+
+    x_text.set_text(f"{point[0, 0]:.1f}")
+    y_text.set_text(f"{point[0, 1]:.1f}")
+
+    out1_text.set_text(f"{activations[0]:.2f}")
+    out2_text.set_text(f"{activations[1]:.2f}")
+    out3_text.set_text(f"{activations[2]:.2f}")
+    circles[1][0].set_facecolor((*circles[1][0].get_facecolor()[:3], activations[0]))
+    circles[1][1].set_facecolor((*circles[1][1].get_facecolor()[:3], activations[1]))
+    circles[1][2].set_facecolor((*circles[1][2].get_facecolor()[:3], activations[2]))
 
     # Current class node
     class_ccenter = np.array([1.4, 0])
     class_cradius = radius * 1.75
-    ax_bottom.annotate(
+    ax_lower.annotate(
         "Current classification", class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14
     )
     class_circle = patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs)
-    class_text = ax_bottom.annotate("Apple", class_ccenter, ha="center", va="center", fontsize=14)
-    ax_bottom.add_patch(class_circle)
+    class_text = ax_lower.annotate("Apple", class_ccenter, ha="center", va="center", fontsize=14)
+    ax_lower.add_patch(class_circle)
     curr_class = np.argmax(activations)
     class_text.set_text(classes[curr_class])
     class_circle.set_facecolor(colors[curr_class])
 
-    ax_upper.legend(loc="upper right")
+    ax_upper.legend(loc="lower right")
     ax_upper.set_title("")
 
-    ax_bottom.set_aspect("equal")
-    ax_bottom.set_xlim(-3, 3)
-    ax_bottom.set_ylim(-1, 1)
-    ax_bottom.set_title("")
+    ax_lower.set_aspect("equal")
+    ax_lower.set_xlim(-3, 3)
+    ax_lower.set_ylim(-1, 1)
+    ax_lower.set_title("")
+    ax_lower.set_xticks([])
+    ax_lower.set_yticks([])
+    ax_lower.axis('off')
 
     fig.suptitle("Activations")
 
