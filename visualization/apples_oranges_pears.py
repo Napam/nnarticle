@@ -51,6 +51,7 @@ def forward_sigmoid(X: np.ndarray, bias: np.ndarray, weights: np.ndarray) -> np.
     z = bias + X @ weights.T
     return 1 / (1 + np.exp(-z))
 
+
 h1 = forward_sigmoid(X, uhidden_biases, uhidden_weights)
 
 xspace = torch.linspace(x_lim[0], x_lim[1], 4)
@@ -79,18 +80,22 @@ def viz_decorator(file: Path, animation: bool = False):
         def wrapper(save: bool = True, clf: bool = True, **kwargs):
             return_value = f(**kwargs)
 
-            if animation:
-                anim.save(file, writer="ffmpeg", fps=60)
-                logger.info(f"Saved animation at {file}")
-            else:
-                if save:
+            if save:
+                if animation:
+                    # Function gotta return the animation object
+                    anim = return_value
+                    anim.save(figures_dir / file, writer="ffmpeg", fps=60)
+                    logger.info(f"Saved animation at {file}")
+                else:
                     savefig(file)
 
             if clf:
                 plt.clf()
 
             return return_value
+
         return wrapper
+
     return decorator
 
 
@@ -114,7 +119,7 @@ def visualize_data_set(scatter_kwargs: dict = None, ax: plt.Axes = None):
     ax.set_aspect("equal")
 
     plt.title("Comparing apples, oranges and pears")
-    plt.show()
+    # plt.show()
     return ax
 
 
@@ -124,7 +129,6 @@ def visualize_data_with_apple_line():
     plt.title("Comparing apples, oranges and pears with a single decision boundary")
 
     plot_hyperplane(xspace, uhidden_biases[0], *uhidden_weights[0], 10, c="k", quiver_kwargs=quiver_kwargs)
-
     # plt.show()
 
 
@@ -140,7 +144,6 @@ def visualize_data_with_hidden_lines(ax: plt.Axes = None):
         plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs, ax=ax)
 
     # plt.show()
-
 
 @viz_decorator("apples_oranges_pears_2lp_lines.pdf")
 def visualize_data_with_2lp_lines():
@@ -160,17 +163,13 @@ def visualize_data_with_2lp_lines():
 
     plt.legend()
 
-    # plt.show()
-
 
 circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
 calc_linewidth = lambda x: max(x * 16, 2)
 
 
 @viz_decorator("apples_oranges_pears_2lp_activations.pdf")
-def visualize_2lp_activations(
-    point: np.ndarray = None, axes: tuple[plt.Axes, plt.Axes] = None
-):
+def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, plt.Axes] = None):
     if axes is None:
         fig, (ax_upper, ax_lower) = plt.subplots(2, 1, figsize=(10, 7))
         fig.tight_layout()
@@ -180,7 +179,7 @@ def visualize_2lp_activations(
     if point is None:
         point = np.array([[140, 10]])
 
-    visualize_data_set(False, False, {"alpha": 0.5}, ax_upper)
+    visualize_data_set(False, False, scatter_kwargs={"alpha": 0.5}, ax=ax_upper)
 
     artists = {}
     artists["scatter"] = ax_upper.scatter(*point.T, label="Unknown", marker="x", c="black", s=70)
@@ -283,11 +282,10 @@ def visualize_2lp_activations(
 
     fig.suptitle("Activations")
 
-    # plt.show()
-
     return fig, (ax_upper, ax_lower), artists
 
-@viz_decorator("2lp_activations.gif")
+
+@viz_decorator("2lp_activations.gif", True)
 def visualize_2lp_activations_animated():
     fig, (ax_upper, ax_lower), artists = visualize_2lp_activations(False, False)
 
@@ -296,6 +294,7 @@ def visualize_2lp_activations_animated():
     pi2 = np.pi * 2
     pbar = tqdm(total=n + 1, disable=False)
     artists_to_animate = pd.core.common.flatten(artists.values())
+
     def step(i: int):
         rad = pi2 * i / n
         point = (m + (np.cos(rad) * 20, np.sin(rad) * 5))[None]
@@ -316,13 +315,16 @@ def visualize_2lp_activations_animated():
 
         pbar.update(1)
         return artists_to_animate
+    pbar.close()
 
     ax_upper.get_legend().remove()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    # plt.show()
+    plt.show()
+    return anim
 
 
-def visualize_appleness_pearness(save: bool = True, clf: bool = True):
+@viz_decorator("appleness_pearness.pdf")
+def visualize_appleness_pearness():
     fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(10, 5.5))
     visualize_data_with_hidden_lines(False, False, ax=ax_left)
 
@@ -344,19 +346,12 @@ def visualize_appleness_pearness(save: bool = True, clf: bool = True):
 
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     fig.suptitle("Visualizing appleness and pearness for each point")
-
-    if save:
-        savefig(figures_dir / "appleness_pearness.pdf")
-    
     # plt.show()
-
-    if clf:
-        plt.clf()
-
     return (ax_left, ax_right)
 
 
-def visualize_appleness_pearness_out_lines(save: bool = True, clf: bool = True):
+@viz_decorator("appleness_pearness_with_out_lines.pdf")
+def visualize_appleness_pearness_out_lines():
     (ax_left, ax_right) = visualize_appleness_pearness(False, False)
     h1lims = get_lims(h1)
     xspace = np.linspace(*h1lims[0], 4)
@@ -374,12 +369,7 @@ def visualize_appleness_pearness_out_lines(save: bool = True, clf: bool = True):
 
     ax_right.set_xlim(*h1lims[0])
     ax_right.set_ylim(*h1lims[1])
-
-    # if save:
-    # plt.savefig("figures/appleness_pearness_with_out_lines.pdf")
-
-    plt.show()
-    plt.clf()
+    # plt.show()
 
 
 def visualize_3lp_animated():
@@ -622,9 +612,7 @@ def visualize_3lp_animated():
 
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    # anim.save("figures/3lp.mp4", writer="ffmpeg", fps=60)
-    plt.show()
-    plt.clf()
+    # plt.show()
 
 
 if __name__ == "__main__":
@@ -632,9 +620,9 @@ if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.setLevel(logging.INFO)
 
-    visualize_data_set(False, False)
+    # visualize_data_set()
     # visualize_data_set_with_orange_line()
-    # visualize_two_lines()
+    # visualize_data_with_hidden_lines()
     # visualize_data_with_2lp_lines()
     # visualize_2lp_activations()
     # visualize_2lp_activations_animated()
