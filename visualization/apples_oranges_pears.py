@@ -372,6 +372,17 @@ def visualize_appleness_pearness_out_lines():
     # plt.show()
 
 
+def visualize_3lp():
+
+    fig = plt.figure(figsize=(10, 8))
+    ax_upperleft = fig.add_subplot(221)
+    ax_upperright = fig.add_subplot(222)
+    ax_bottom = fig.add_subplot(212)
+
+    plt.show()
+
+
+
 def visualize_3lp_animated():
     hidden_biases = np.array(
         [
@@ -612,7 +623,8 @@ def visualize_3lp_animated():
 
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    # plt.show()
+    plt.show()
+
 
 
 if __name__ == "__main__":
@@ -628,4 +640,5 @@ if __name__ == "__main__":
     # visualize_2lp_activations_animated()
     # visualize_appleness_pearness()
     # visualize_appleness_pearness_out_lines()
+    visualize_3lp()
     # visualize_3lp_animated()
