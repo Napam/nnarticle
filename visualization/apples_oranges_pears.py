@@ -75,13 +75,14 @@ def savefig(file: str | Path):
     logger.info(f"Created figure {file}")
 
 
-def viz_decorator(file: Path, animation: bool = False):
+def viz_decorator(file: str | Path):
+    file = Path(file)
+
     def decorator(f):
         def wrapper(save: bool = True, clf: bool = True, **kwargs):
             return_value = f(**kwargs)
-
             if save:
-                if animation:
+                if animation := file.suffix in {".gif", ".mp4"}:
                     # Function gotta return the animation object
                     anim = return_value
                     anim.save(figures_dir / file, writer="ffmpeg", fps=60)
@@ -140,10 +141,17 @@ def visualize_data_with_hidden_lines(ax: plt.Axes = None):
     visualize_data_set(False, False, ax=ax)
     plt.title("Decision boundaries for apples and pears")
 
+    artists = {}
+    artists["lines"] = lines = []
     for (color, bias, weights) in zip(colors[[0, 2]], uhidden_biases, uhidden_weights):
-        plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs, ax=ax)
+        _, artists_ = plot_hyperplane(
+            xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs, ax=ax, return_artists=True
+        )
+        lines.append(artists_["line"][0])
 
     # plt.show()
+    return artists
+
 
 @viz_decorator("apples_oranges_pears_2lp_lines.pdf")
 def visualize_data_with_2lp_lines():
@@ -165,6 +173,7 @@ def visualize_data_with_2lp_lines():
 
 
 circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
+unknown_point_kwargs = {"marker": "x", "c": "black", "s": 70}
 calc_linewidth = lambda x: max(x * 16, 2)
 
 
@@ -182,12 +191,11 @@ def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, pl
     visualize_data_set(False, False, scatter_kwargs={"alpha": 0.5}, ax=ax_upper)
 
     artists = {}
-    artists["scatter"] = ax_upper.scatter(*point.T, label="Unknown", marker="x", c="black", s=70)
+    artists["scatter"] = ax_upper.scatter(*point.T, label="Unknown", **unknown_point_kwargs)
     activations = forward_sigmoid(point, u2lp_biases, u2lp_weights)[0]
 
     # Lines
     artists["lines"] = lines = []
-    artists["arrows"] = arrows = []
     for i, (class_, color) in enumerate(zip(classes, colors)):
         _, artists_ = plot_hyperplane(
             xspace,
@@ -205,7 +213,6 @@ def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, pl
             return_artists=True,
         )
         lines.append(artists_["line"][0])
-        arrows.append(artists_["arrows"])
 
     # Model graph
     radius = 0.25
@@ -282,10 +289,12 @@ def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, pl
 
     fig.suptitle("Activations")
 
+    # plt.show()
+
     return fig, (ax_upper, ax_lower), artists
 
 
-@viz_decorator("2lp_activations.gif", True)
+@viz_decorator("2lp_activations.gif")
 def visualize_2lp_activations_animated():
     fig, (ax_upper, ax_lower), artists = visualize_2lp_activations(False, False)
 
@@ -315,6 +324,7 @@ def visualize_2lp_activations_animated():
 
         pbar.update(1)
         return artists_to_animate
+
     pbar.close()
 
     ax_upper.get_legend().remove()
@@ -324,9 +334,14 @@ def visualize_2lp_activations_animated():
 
 
 @viz_decorator("appleness_pearness.pdf")
-def visualize_appleness_pearness():
-    fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(10, 5.5))
-    visualize_data_with_hidden_lines(False, False, ax=ax_left)
+def visualize_appleness_pearness(axes: tuple[plt.Axes, plt.Axes] = None):
+    if axes is None:
+        fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(10, 5.5))
+    else:
+        fig = plt.gcf()
+        ax_left, ax_right = axes
+
+    artists = visualize_data_with_hidden_lines(False, False, ax=ax_left)
 
     ax_left.set_xlabel("Weight (g)")
     ax_left.set_ylabel("Diameter (cm)")
@@ -347,16 +362,24 @@ def visualize_appleness_pearness():
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     fig.suptitle("Visualizing appleness and pearness for each point")
     # plt.show()
-    return (ax_left, ax_right)
+    return fig, (ax_left, ax_right), artists
 
 
 @viz_decorator("appleness_pearness_with_out_lines.pdf")
-def visualize_appleness_pearness_out_lines():
-    (ax_left, ax_right) = visualize_appleness_pearness(False, False)
+def visualize_appleness_pearness_out_lines(axes: tuple[plt.Axes, plt.Axes] = None):
+    if axes is None:
+        fig, (ax_left, ax_right), artists = visualize_appleness_pearness(False, False)
+    else:
+        ax_left, ax_right = axes
+        fig, _, artists = visualize_appleness_pearness(False, False, axes=axes)
+
+    artists["hidden_lines"] = artists.pop("lines")
+
     h1lims = get_lims(h1)
     xspace = np.linspace(*h1lims[0], 4)
+    artists["out_lines"] = lines = []
     for i, (label, color) in enumerate(zip(classes, colors)):
-        plot_hyperplane(
+        _, artists_ = plot_hyperplane(
             xspace,
             output_biases[i],
             *output_weights[i],
@@ -365,22 +388,44 @@ def visualize_appleness_pearness_out_lines():
             ax=ax_right,
             quiver_kwargs=quiver_kwargs,
             plot_kwargs={"label": label},
+            return_artists=True,
         )
+        lines.append(artists_["line"][0])
 
     ax_right.set_xlim(*h1lims[0])
     ax_right.set_ylim(*h1lims[1])
     # plt.show()
+    return fig, (ax_left, ax_right), artists
 
 
-def visualize_3lp():
+@viz_decorator("3lp.pdf")
+def visualize_3lp(point: np.ndarray = None):
 
     fig = plt.figure(figsize=(10, 8))
     ax_upperleft = fig.add_subplot(221)
     ax_upperright = fig.add_subplot(222)
     ax_bottom = fig.add_subplot(212)
 
-    plt.show()
+    _, _, artists = visualize_appleness_pearness_out_lines(False, False, axes=(ax_upperleft, ax_upperright))
+    # Artist keys: hidden_lines, out_lines
 
+    point0 = np.array([point or [140, 10], [0, 0]], dtype=float)
+    h1 = forward_sigmoid(point0, uhidden_biases, uhidden_weights)[0]
+    point1 = h1
+
+    artists["point0"] = ax_upperleft.scatter(*point0[None].T, label="Unknown", **unknown_point_kwargs)
+    artists["point1"] = ax_upperright.scatter(*point1[None].T, label="Unknown", **unknown_point_kwargs)
+
+    print(h1)
+    for i, hidden_line in enumerate(artists["hidden_lines"]):
+        hidden_line.set_linewidth(calc_linewidth(h1[i]))
+
+    h2 = forward_sigmoid(point1, output_biases, output_weights)
+
+    for i, out_line in enumerate(artists["out_lines"]):
+        out_line.set_linewidth(calc_linewidth(h2[i]))
+
+    plt.show()
 
 
 def visualize_3lp_animated():
@@ -624,7 +669,6 @@ def visualize_3lp_animated():
     fig.tight_layout()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
     plt.show()
-
 
 
 if __name__ == "__main__":
