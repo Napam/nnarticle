@@ -17,7 +17,14 @@ project_dir = Path(__file__).resolve().parent.parent
 figures_dir = project_dir / "visualization" / "figures"
 sys.path.insert(0, str(project_dir))
 
-from utils import get_lims, plot_hyperplane, unnormalize_planes, draw_ann, setup_pyplot_params, json_to_weights
+from utils import (
+    get_lims,
+    plot_hyperplane,
+    unnormalize_planes,
+    draw_ann,
+    setup_pyplot_params,
+    json_to_weights,
+)
 
 logger = logging.getLogger("visualize.apples_oranges_pears")
 
@@ -275,7 +282,11 @@ def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, pl
     class_ccenter = np.array([1.2, 0])
     class_cradius = radius * 1.75
     ax_lower.annotate(
-        "Current classification", class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14
+        "Current classification",
+        class_ccenter + [0, class_cradius + 0.2],
+        ha="center",
+        va="center",
+        fontsize=14,
     )
     artists["class_circle"] = class_circle = patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs)
     class_circle.set_facecolor(colors[curr_class])
@@ -430,9 +441,11 @@ def visualize_3lp(point: np.ndarray = None):
     h1 = forward_sigmoid(point0, uhidden_biases, uhidden_weights)[0]
     point1 = h1
 
-    artists["point0"] = ax_upperleft.scatter(*point0[None].T, label="Unknown", **unknown_point_kwargs)
-    artists["point1"] = ax_upperright.scatter(*point1[None].T, label="Unknown", **unknown_point_kwargs)
+    # "Unknown" scatter points
+    artists["point0"] = ax_upperleft.scatter(*point0[None].T, label="Unknown", **unknown_point_kwargs, zorder=100)
+    artists["point1"] = ax_upperright.scatter(*point1[None].T, label="Unknown", **unknown_point_kwargs, zorder=100)
 
+    # Lines with varying widths
     for i, hidden_line in enumerate(artists["hidden_lines"]):
         hidden_line.set_linewidth(calc_linewidth(h1[i]))
 
@@ -440,6 +453,92 @@ def visualize_3lp(point: np.ndarray = None):
 
     for i, out_line in enumerate(artists["out_lines"]):
         out_line.set_linewidth(calc_linewidth(h2[i]))
+
+    # Model graph
+    radius = 0.25
+    ann_center = (-1.3, 0)
+    fontsize = 13
+    circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
+    circles = draw_ann(
+        layers=[2, 2, 3],
+        radius=radius,
+        center=ann_center,
+        spacing=(0.5, 0.4),
+        ax=ax_bottom,
+        circle_kwargs=circle_kwargs,
+        quiver_kwargs={"color": "k", "width": 0.016},
+    )
+    artists["circles"] = list(chain.from_iterable(circles[1:]))
+    ccenters = [[np.array(circle.get_center()) for circle in layer] for layer in circles]
+
+    # Hidden node colors
+    circles[1][0].set_facecolor(colors[0])
+    circles[1][1].set_facecolor(colors[1])
+
+    # Output node colors
+    circles[2][0].set_facecolor(colors[0])
+    circles[2][1].set_facecolor(colors[1])
+    circles[2][2].set_facecolor(colors[2])
+
+    # Static text in ax_bottom
+    ax_bottom.annotate("Weight", ccenters[0][0] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Diameter", ccenters[0][1] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Model graph", ccenters[1][0] + [0, 0.6], ha="center", va="center", fontsize=14)
+    ax_bottom.annotate("Appleness", ccenters[2][0] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Orangeness", ccenters[2][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_bottom.annotate("Pearness", ccenters[2][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+
+    # Text inside nodes
+    artists["x_text"] = x_text = ax_bottom.annotate("x", ccenters[0][0], ha="center", va="center", fontsize=fontsize)
+    artists["y_text"] = y_text = ax_bottom.annotate("y", ccenters[0][1], ha="center", va="center", fontsize=fontsize)
+    artists["hidden1_text"] = hidden1_text = ax_bottom.annotate("h1", ccenters[1][0], ha="center", va="center", fontsize=fontsize)
+    artists["hidden2_text"] = hidden2_text = ax_bottom.annotate("h2", ccenters[1][1], ha="center", va="center", fontsize=fontsize)
+    artists["out1_text"] = out1_text = ax_bottom.annotate("o1", ccenters[2][0], ha="center", va="center", fontsize=fontsize)
+    artists["out2_text"] = out2_text = ax_bottom.annotate("o2", ccenters[2][1], ha="center", va="center", fontsize=fontsize)
+    artists["out3_text"] = out3_text = ax_bottom.annotate("o3", ccenters[2][2], ha="center", va="center", fontsize=fontsize)
+
+    x_text.set_text(f"{point0[0, 0]:.1f}")
+    y_text.set_text(f"{point0[0, 1]:.1f}")
+
+    # Current class node
+    class_ccenter = np.array([1.6, 0])
+    class_cradius = radius * 1.75
+    ax_bottom.annotate(
+        "Current classification",
+        class_ccenter + [0, class_cradius + 0.2],
+        ha="center",
+        va="center",
+        fontsize=14,
+    )
+    artists["class_circle"] = class_circle = patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs)
+    artists["class_text"] = class_text = ax_bottom.annotate("Apple", class_ccenter, ha="center", va="center", fontsize=14)
+    ax_bottom.add_patch(class_circle)
+
+    hidden1_text.set_text(f"{h1[0]:.2f}")
+    hidden2_text.set_text(f"{h1[1]:.2f}")
+    circles[1][0].set_facecolor((*circles[1][0].get_facecolor()[:3], h1[0]))
+    circles[1][1].set_facecolor((*circles[1][1].get_facecolor()[:3], h1[1]))
+
+    out1_text.set_text(f"{h2[0]:.2f}")
+    out2_text.set_text(f"{h2[1]:.2f}")
+    out3_text.set_text(f"{h2[2]:.2f}")
+    circles[2][0].set_facecolor((*circles[2][0].get_facecolor()[:3], h2[0]))
+    circles[2][1].set_facecolor((*circles[2][1].get_facecolor()[:3], h2[1]))
+    circles[2][2].set_facecolor((*circles[2][2].get_facecolor()[:3], h2[2]))
+
+    curr_class = np.argmax(h2)
+    class_text.set_text(classes[curr_class])
+    class_circle.set_facecolor(colors[curr_class])
+
+    ax_upperright.get_legend().remove()
+
+    ax_bottom.set_title("")
+    ax_bottom.set_aspect("equal")
+    ax_bottom.set_xlim(-3, 3)
+    ax_bottom.set_ylim(-1, 1)
+    ax_bottom.set_xticks([])
+    ax_bottom.set_yticks([])
+    ax_bottom.axis("off")
 
     plt.show()
 
@@ -603,7 +702,11 @@ def visualize_3lp_animated():
     class_ccenter = np.array([1.6, 0])
     class_cradius = radius * 1.75
     ax_bottom.annotate(
-        "Current classification", class_ccenter + [0, class_cradius + 0.2], ha="center", va="center", fontsize=14
+        "Current classification",
+        class_ccenter + [0, class_cradius + 0.2],
+        ha="center",
+        va="center",
+        fontsize=14,
     )
     animated_artists.append(class_circle := patches.Circle(class_ccenter, radius=class_cradius, **circle_kwargs))
     animated_artists.append(
