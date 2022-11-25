@@ -9,7 +9,6 @@ from matplotlib import patches
 from matplotlib.colors import to_rgb
 import math
 from tqdm import tqdm
-from itertools import chain
 from pathlib import Path
 import logging
 
@@ -84,7 +83,7 @@ def viz_decorator(file: str | Path):
     def decorator(f):
         def wrapper(save: bool = True, clf: bool = True, **kwargs):
             return_value = f(**kwargs)
-            save = False
+            # save = False
             if save:
                 if animation := file.suffix in {".gif", ".mp4"}:
                     # Function gotta return the animation object
@@ -304,7 +303,7 @@ def visualize_2lp_activations_animated():
     n = 300  # Animation steps
     pi2 = np.pi * 2
     pbar = tqdm(total=n + 1, disable=False)
-    artists_to_animate = pd.core.common.flatten(artists.values())
+    artists_to_animate = list(pd.core.common.flatten(artists.values()))
 
     def step(i: int):
         rad = pi2 * i / n
@@ -524,6 +523,7 @@ def visualize_3lp(point: np.ndarray = None):
     return fig, (ax_upperleft, ax_upperright, ax_bottom), artists
 
 
+@viz_decorator("3lp.gif")
 def visualize_3lp_animated():
     fig, (ax_upperleft, ax_upperright, ax_bottom), artists = visualize_3lp(False, False)
 
@@ -549,7 +549,7 @@ def visualize_3lp_animated():
 
     point0 = np.array([[0, 0]], dtype=float)
 
-    artists_to_animate = pd.core.common.flatten(artists.values())
+    artists_to_animate = list(pd.core.common.flatten(artists.values()))
     pi2 = np.pi * 2
 
     def step(i):
@@ -598,7 +598,8 @@ def visualize_3lp_animated():
         return artists_to_animate
 
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    plt.show()
+    # plt.show()
+    return anim
 
 
 if __name__ == "__main__":
