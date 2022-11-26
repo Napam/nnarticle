@@ -31,7 +31,34 @@ def savefig(file: str | Path):
     logger.info(f"Created figure {file}")
 
 
-def visualize_data_set(save: bool = True, clf: bool = True):
+def viz_decorator(file: str | Path):
+    file = Path(file)
+
+    def decorator(f):
+        def wrapper(save: bool = True, clf: bool = True, **kwargs):
+            return_value = f(**kwargs)
+            if save:
+                if file.suffix in {".gif", ".mp4"}:
+                    # Function gotta return the animation object
+                    anim, defer = return_value
+                    anim.save(figures_dir / file, writer="ffmpeg", fps=60)
+                    defer()
+                    logger.info(f"Created animation {file}")
+                else:
+                    savefig(file)
+
+            if clf:
+                plt.clf()
+
+            return return_value
+
+        return wrapper
+
+    return decorator
+
+
+@viz_decorator("dataset_apples_oranges.pdf")
+def visualize_data_set():
     plt.xlabel("Weight (g)")
     plt.ylabel("Diameter (cm)")
     plt.title("Comparing apples and oranges")
@@ -44,30 +71,20 @@ def visualize_data_set(save: bool = True, clf: bool = True):
     plt.gcf().set_figheight(10)
     plt.gcf().set_figwidth(10)
 
-    if save:
-        savefig("dataset_apples_oranges.pdf")
-
     # plt.show()
 
-    if clf:
-        plt.clf()
 
-
-def visualize_data_set_with_unknown_point(save: bool = True, clf: bool = True):
+@viz_decorator("apples_oranges_x.pdf")
+def visualize_data_set_with_unknown_point():
     visualize_data_set(False, False)
 
     plt.title("Comparing apples and oranges with an unknown")
     plt.scatter([130], [5.5], label="Unknown", marker="x", c="black", s=80)
 
-    if save:
-        savefig("apples_oranges_x.pdf")
-
     # plt.show()
 
-    if clf:
-        plt.clf()
 
-
+@viz_decorator("apples_oranges_x_line.pdf")
 def visualize_data_set_with_unknown_point_and_line():
     visualize_data_set_with_unknown_point(False, False)
 
@@ -90,10 +107,7 @@ def visualize_data_set_with_unknown_point_and_line():
         quiver_kwargs={"units": "dots", "width": 2.25, "scale": 0.065, "scale_units": "dots"},
     )
 
-    savefig("apples_oranges_x_line.pdf")
-
     # plt.show()
-    plt.clf()
 
 
 if __name__ == "__main__":

@@ -83,13 +83,13 @@ def viz_decorator(file: str | Path):
     def decorator(f):
         def wrapper(save: bool = True, clf: bool = True, **kwargs):
             return_value = f(**kwargs)
-            # save = False
             if save:
-                if animation := file.suffix in {".gif", ".mp4"}:
+                if file.suffix in {".gif", ".mp4"}:
                     # Function gotta return the animation object
-                    anim = return_value
+                    anim, defer = return_value
                     anim.save(figures_dir / file, writer="ffmpeg", fps=60)
-                    logger.info(f"Saved animation at {file}")
+                    defer()
+                    logger.info(f"Created animation {file}")
                 else:
                     savefig(file)
 
@@ -326,12 +326,10 @@ def visualize_2lp_activations_animated():
         pbar.update(1)
         return artists_to_animate
 
-    pbar.close()
-
     ax_upper.get_legend().remove()
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    plt.show()
-    return anim
+    # plt.show()
+    return anim, lambda: pbar.close()
 
 
 @viz_decorator("appleness_pearness.pdf")
@@ -542,6 +540,8 @@ def visualize_3lp_animated():
     class_text = artists["class_text"]
     class_circle = artists["class_circle"]
 
+    logger.info("Rendering 3LP animation")
+
     n = 300
     pbar = tqdm(total=n + 1, disable=False)
     centerx = np.mean(x_lim)
@@ -598,8 +598,10 @@ def visualize_3lp_animated():
         return artists_to_animate
 
     anim = FuncAnimation(fig, step, blit=True, interval=0, frames=n)
-    # plt.show()
-    return anim
+
+    # plt.show
+
+    return anim, lambda: pbar.close()
 
 
 if __name__ == "__main__":
@@ -607,13 +609,13 @@ if __name__ == "__main__":
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.setLevel(logging.INFO)
 
-    # visualize_data_set()
-    # visualize_data_set_with_orange_line()
-    # visualize_data_with_hidden_lines()
-    # visualize_data_with_2lp_lines()
-    # visualize_2lp_activations()
-    # visualize_2lp_activations_animated()
-    # visualize_appleness_pearness()
-    # visualize_appleness_pearness_out_lines()
-    # visualize_3lp()
+    visualize_data_set()
+    visualize_data_with_apple_line()
+    visualize_data_with_hidden_lines()
+    visualize_data_with_2lp_lines()
+    visualize_2lp_activations()
+    visualize_2lp_activations_animated()
+    visualize_appleness_pearness()
+    visualize_appleness_pearness_out_lines()
+    visualize_3lp()
     visualize_3lp_animated()
