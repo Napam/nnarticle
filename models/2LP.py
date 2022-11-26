@@ -120,6 +120,6 @@ if __name__ == "__main__":
     model_to_json(model, weight_file)
     logger.info(f"Saved weight file for {__file__} at {weight_file}")
     model.plot(X, y, X_mean, X_std)
-    plt.show()
+    # plt.show()
     plt.savefig(image_file)
     logger.info(f"Saved weight image file for {__file__} at {image_file}")
