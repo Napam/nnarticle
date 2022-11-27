@@ -1,3 +1,7 @@
+"""
+To create figures and animations that are related to apple, orange and pear classes
+"""
+
 from pprint import pprint
 import sys
 import torch

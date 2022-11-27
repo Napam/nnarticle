@@ -1,3 +1,7 @@
+"""
+Helper functions for serialization / deserialization of nn.Module instances
+"""
+
 import json
 import numpy as np
 import torch
@@ -6,7 +10,29 @@ from pathlib import Path
 from io import TextIOBase
 
 
-def model_to_json(model: nn.Module, file: str | Path = None, indent: int = 2, **kwargs) -> str | None:
+def model_to_json(model: nn.Module, file: str | Path = None, indent: int = 2, **kwargs) -> str:
+    """
+    Serialize given PyTorch nn.Module model to JSON.
+
+    Parameters
+    ----------
+    model : nn.Module
+        PyTorch model
+
+    file : str or Path, optional
+        If given a path, store the model
+
+    indent: int, default = 2
+        Indentation of JSON file
+
+    **kwargs : dict, optional
+        Extra arguemnts to json.dumps function
+
+    Returns
+    -------
+    str
+        Model as serialized JSON
+    """
 
     serializable_state_dict = {k: v.numpy().tolist() for k, v in model.state_dict().items()}
     jsonstr = json.dumps(serializable_state_dict, indent=indent, **kwargs)
@@ -23,6 +49,18 @@ def model_to_json(model: nn.Module, file: str | Path = None, indent: int = 2, **
 
 
 def json_to_weights(file: str | Path | TextIOBase) -> dict[str, np.ndarray]:
+    """
+    Reads serialized model and produces a dictionary of model weights as numpy arrays
+
+    Parameters
+    ----------
+    file : str or Path or TextIOBase
+        path to json file
+
+    Returns
+    -------
+    dict where key are layer names and values are layer values
+    """
 
     close_file_after = False
     if not isinstance(file, TextIOBase):

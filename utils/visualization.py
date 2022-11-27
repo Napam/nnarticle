@@ -1,3 +1,7 @@
+"""
+Helper functions for visualizations
+"""
+
 from matplotlib import pyplot as plt
 from numpy.typing import ArrayLike
 import numpy as np
@@ -5,6 +9,9 @@ from matplotlib import patches
 
 
 def setup_pyplot_params():
+    """
+    Sets pyplot params
+    """
     plt.rcParams.update({"font.family": "serif", "mathtext.fontset": "dejavuserif"})
 
 
@@ -15,13 +22,58 @@ def plot_hyperplane(
     yslope: float,
     n: int = 3,
     ax: plt.Axes = None,
-    unit_plane: bool = True,
+    normalize_arrows: bool = True,
     c: str = None,
     alpha: float = None,
     plot_kwargs: dict = None,
     quiver_kwargs: dict = None,
     return_artists: bool = False,
 ):
+    """
+    Visalize a 3D plane as a 2D line with arrows signaling which direction the 3D hyperplane is increasing
+
+    Parameters
+    ----------
+    xspace : ArrayLikw
+        Visualization domain
+
+    intercept : float
+        y-intercept of the 3D plane
+
+    xslope : float
+        slope of the 3D plane in the x-axis
+
+    yslope : float
+        slope of the 3D plane in the y-axis
+
+    n : int
+        Number of arrows to show
+
+    ax : plt.Axes, optional
+        axes to plot in
+
+    normalize_arrows : bool, default = True
+        normalize arrow sizes
+
+    c : str, optional
+        color of line and arrows
+
+    alpha : str, optional
+        alpha of line and arrows
+
+    plot_kwargs : dict, optional
+        kwargs to send to plt.plot
+
+    quiver_kwargs : dict, optional
+        kwargs to send to plt.quiver
+
+    return_artists : bool, default=False
+        Whether to return the lines and arrows or not
+
+    Returns
+    -------
+    plt.Axes or tuple plt.Axes and dict of artists
+    """
 
     plot_kwargs = plot_kwargs or {}
     quiver_kwargs = quiver_kwargs or {}
@@ -48,7 +100,7 @@ def plot_hyperplane(
     arrowxs = np.linspace(xmin + diff, xmax - diff, n)
 
     norm = 1
-    if unit_plane:
+    if normalize_arrows:
         norm = np.linalg.norm([xslope, yslope])
 
     arrows = ax.quiver(arrowxs, f(arrowxs), xslope / norm, yslope / norm, **quiver_kwargs)
@@ -59,6 +111,20 @@ def plot_hyperplane(
 
 
 def _get_centered_points(x: float, n: int, spacing: float) -> np.ndarray:
+    """
+    Given a center x, generate n points centered around x
+
+    Parameters
+    ----------
+    x : float
+        The center
+
+    n : int
+        Number of points
+
+    spacing : float
+        Spacing of the points
+    """
     length = (n - 1) * spacing
     start = x - length / 2
     stop = start + length
@@ -76,6 +142,36 @@ def draw_ann(
     quiver_kwargs: dict = None,
     edges: bool = True
 ):
+    """
+    Visualization of a dense artificial neural networks as a directed graph
+
+    Parameters
+    ----------
+    layers : list of ints
+        Nodes in each layer
+
+    spacing : tuple of floats
+        horizontal and vertical spacing of nodes respectively
+
+    radius : float
+        Radius of nodes
+
+    ax : plt.Axes, optional
+        axes to draw in
+
+    circle_kwargs : dict, optional
+        kwargs for patches.Circle (used to draw nodes)
+
+    quiver_kwargs : dict, optional
+        kwargs for the directed graph edges
+
+    edges: bool, default=True
+        To draw edges or not
+
+    Returns
+    -------
+    list of lists of pyplot circle patches
+    """
 
     ax = ax or plt.gca()
     circle_kwargs = {} if circle_kwargs is None else circle_kwargs

@@ -1,3 +1,7 @@
+"""
+To create figures that only have apples and oranges
+"""
+
 import torch
 import pandas as pd
 from matplotlib import pyplot as plt
