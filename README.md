@@ -29,7 +29,7 @@ This repository contains code to
 ## How to run
 Note: dataset, model weights and figures are committed to this repository so all the generated files are already present by default
 
-1. Ensure that you have python 3.10 or higher
+1. This project was made with Python 3.10, so ensure that you have at least version 3.10
 1. Ensure that the packages in `requirements.txt` are installed
 1. Ensure that `ffmpeg` is installed on the system and is available in your environment. That is, you should be able to run `ffmpeg -h` in your shell.
 1. You can choose two methods to run the files:
