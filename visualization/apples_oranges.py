@@ -84,6 +84,7 @@ def visualize_data_set_with_unknown_point():
 
     plt.title("Comparing apples and oranges with an unknown")
     plt.scatter([130], [5.5], label="Unknown", marker="x", c="black", s=80)
+    plt.legend(loc="upper right")
 
     # plt.show()
 
@@ -110,6 +111,8 @@ def visualize_data_set_with_unknown_point_and_line():
         c="k",
         quiver_kwargs={"units": "dots", "width": 2.25, "scale": 0.065, "scale_units": "dots"},
     )
+
+    plt.title("Comparing apples and oranges with an unknown and a decision boundary")
 
     # plt.show()
 

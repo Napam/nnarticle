@@ -63,7 +63,8 @@ h1 = forward_sigmoid(X, uhidden_biases, uhidden_weights)
 xspace = torch.linspace(x_lim[0], x_lim[1], 4)
 
 plot_kwargs = {}
-quiver_kwargs = {"units": "dots", "width": 2, "headwidth": 8, "scale": 0.05, "scale_units": "dots"}
+quiver_kwargs = {"units": "dots", "width": 2.25, "scale": 0.065, "scale_units": "dots"}
+quiver_kwargs_animation = {**quiver_kwargs, "width": 2, "headwidth": 8, "scale": 0.05}
 
 classes = np.array(["Apple", "Orange", "Pear"])
 colors = np.array(
@@ -141,12 +142,15 @@ def visualize_data_with_apple_line():
 
 
 @viz_decorator("apples_oranges_pears_with_hidden_lines.pdf")
-def visualize_data_with_hidden_lines(ax: plt.Axes = None, scatter_kwargs: dict = None):
+def visualize_data_with_hidden_lines(ax: plt.Axes = None, scatter_kwargs: dict = None, quiver_kwargs_: dict = None):
     if ax is None:
         ax = plt.gca()
 
     if scatter_kwargs is None:
         scatter_kwargs = {}
+
+    if quiver_kwargs_ is None:
+        quiver_kwargs_ = quiver_kwargs
 
     visualize_data_set(False, False, scatter_kwargs=scatter_kwargs, ax=ax)
     plt.title("Decision boundaries for apples and pears")
@@ -154,7 +158,7 @@ def visualize_data_with_hidden_lines(ax: plt.Axes = None, scatter_kwargs: dict =
     artists = {}
     artists["lines"] = lines = []
     for (color, bias, weights) in zip(colors[[0, 2]], uhidden_biases, uhidden_weights):
-        _, artists_ = plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs, ax=ax, return_artists=True)
+        _, artists_ = plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs_, ax=ax, return_artists=True)
         lines.append(artists_["line"][0])
 
     # plt.show()
@@ -189,7 +193,10 @@ def calc_linewidth(x):
 
 
 @viz_decorator("apples_oranges_pears_2lp_activations.pdf")
-def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, plt.Axes] = None):
+def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, plt.Axes] = None, quiver_kwargs_: dict = None):
+    if quiver_kwargs_ is None:
+        quiver_kwargs_ = quiver_kwargs
+
     if axes is None:
         fig, (ax_upper, ax_lower) = plt.subplots(2, 1, figsize=(10, 7))
         fig.tight_layout()
@@ -219,7 +226,7 @@ def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, pl
                 "linewidth": calc_linewidth(activations[i]),
                 "label": class_ + " boundary",
             },
-            quiver_kwargs=quiver_kwargs,
+            quiver_kwargs=quiver_kwargs_,
             ax=ax_upper,
             return_artists=True,
         )
@@ -254,8 +261,8 @@ def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, pl
     ax_lower.annotate("Diameter", ccenters[0][1] - [radius + 0.1, 0], ha="right", va="center", fontsize=fontsize)
     ax_lower.annotate("Model graph", ccenters[0][0] + [0.4, 0.7], ha="center", va="center", fontsize=14)
     ax_lower.annotate("Appleness", ccenters[1][0] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-    ax_lower.annotate("Pearness", ccenters[1][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
-    ax_lower.annotate("Orangeness", ccenters[1][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_lower.annotate("Orangeness", ccenters[1][1] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
+    ax_lower.annotate("Pearness", ccenters[1][2] + [radius + 0.1, 0], ha="left", va="center", fontsize=fontsize)
 
     # Text inside nodes
     artists["x_text"] = ax_lower.annotate(f"{point[0, 0]:.1f}", ccenters[0][0], ha="center", va="center", fontsize=fontsize)
@@ -301,7 +308,7 @@ def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, pl
 
 @viz_decorator("2lp_activations.gif")
 def visualize_2lp_activations_animated():
-    fig, (ax_upper, ax_lower), artists = visualize_2lp_activations(False, False)
+    fig, (ax_upper, ax_lower), artists = visualize_2lp_activations(False, False, quiver_kwargs_=quiver_kwargs_animation)
 
     logger.info("Rendering 2LP animation")
     n = 300  # Animation steps
@@ -337,7 +344,7 @@ def visualize_2lp_activations_animated():
 
 
 @viz_decorator("appleness_pearness.pdf")
-def visualize_appleness_pearness(axes: tuple[plt.Axes, plt.Axes] = None, scatter_kwargs: dict = None):
+def visualize_appleness_pearness(axes: tuple[plt.Axes, plt.Axes] = None, scatter_kwargs: dict = None, quiver_kwargs_: dict = None):
     if axes is None:
         fig, (ax_left, ax_right) = plt.subplots(1, 2, figsize=(10, 5.5))
     else:
@@ -347,7 +354,10 @@ def visualize_appleness_pearness(axes: tuple[plt.Axes, plt.Axes] = None, scatter
     if scatter_kwargs is None:
         scatter_kwargs = {}
 
-    artists = visualize_data_with_hidden_lines(False, False, ax=ax_left, scatter_kwargs=scatter_kwargs)
+    if quiver_kwargs_ is None:
+        quiver_kwargs_ = quiver_kwargs
+
+    artists = visualize_data_with_hidden_lines(False, False, ax=ax_left, scatter_kwargs=scatter_kwargs, quiver_kwargs_=quiver_kwargs_)
 
     ax_left.set_xlabel("Weight (g)")
     ax_left.set_ylabel("Diameter (cm)")
@@ -372,15 +382,25 @@ def visualize_appleness_pearness(axes: tuple[plt.Axes, plt.Axes] = None, scatter
 
 
 @viz_decorator("appleness_pearness_with_out_lines.pdf")
-def visualize_appleness_pearness_out_lines(axes: tuple[plt.Axes, plt.Axes] = None, scatter_kwargs: dict = None):
+def visualize_appleness_pearness_out_lines(
+    axes: tuple[plt.Axes, plt.Axes] = None, scatter_kwargs: dict = None, quiver_kwargs_: dict = None
+):
+
     if scatter_kwargs is None:
         scatter_kwargs = {}
 
+    if quiver_kwargs_ is None:
+        quiver_kwargs_ = quiver_kwargs
+
     if axes is None:
-        fig, (ax_left, ax_right), artists = visualize_appleness_pearness(False, False, scatter_kwargs=scatter_kwargs)
+        fig, (ax_left, ax_right), artists = visualize_appleness_pearness(
+            False, False, scatter_kwargs=scatter_kwargs, quiver_kwargs_=quiver_kwargs_animation
+        )
     else:
         ax_left, ax_right = axes
-        fig, _, artists = visualize_appleness_pearness(False, False, axes=axes, scatter_kwargs=scatter_kwargs)
+        fig, _, artists = visualize_appleness_pearness(
+            False, False, axes=axes, scatter_kwargs=scatter_kwargs, quiver_kwargs_=quiver_kwargs_animation
+        )
 
     artists["hidden_lines"] = artists.pop("lines")
 
@@ -395,7 +415,7 @@ def visualize_appleness_pearness_out_lines(axes: tuple[plt.Axes, plt.Axes] = Non
             6,
             c=color,
             ax=ax_right,
-            quiver_kwargs=quiver_kwargs,
+            quiver_kwargs=quiver_kwargs_,
             plot_kwargs={"label": label},
             return_artists=True,
         )
@@ -414,7 +434,9 @@ def visualize_3lp(point: np.ndarray = None):
     ax_upperright = fig.add_subplot(222)
     ax_bottom = fig.add_subplot(212)
 
-    _, _, artists = visualize_appleness_pearness_out_lines(False, False, axes=(ax_upperleft, ax_upperright), scatter_kwargs={"alpha": 0.25})
+    _, _, artists = visualize_appleness_pearness_out_lines(
+        False, False, axes=(ax_upperleft, ax_upperright), scatter_kwargs={"alpha": 0.25}, quiver_kwargs_=quiver_kwargs_animation
+    )
     # Artist keys: hidden_lines, out_lines
 
     point0 = np.array([point or [140, 10]], dtype=float)
