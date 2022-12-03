@@ -27,6 +27,8 @@ from utils import (
     draw_ann,
     setup_pyplot_params,
     json_to_weights,
+    plot_kwargs,
+    quiver_kwargs
 )
 
 logger = logging.getLogger("visualize.apples_oranges_pears")
@@ -62,10 +64,7 @@ h1 = forward_sigmoid(X, uhidden_biases, uhidden_weights)
 
 xspace = torch.linspace(x_lim[0], x_lim[1], 4)
 
-plot_kwargs = {}
-quiver_kwargs = {"units": "dots", "width": 2.25, "scale": 0.065, "scale_units": "dots"}
 quiver_kwargs_animation = {**quiver_kwargs, "width": 2, "headwidth": 8, "scale": 0.05}
-
 classes = np.array(["Apple", "Orange", "Pear"])
 colors = np.array(
     [
@@ -137,7 +136,7 @@ def visualize_data_with_apple_line():
     visualize_data_set(False, False)
     plt.title("Comparing apples, oranges and pears with a single decision boundary")
 
-    plot_hyperplane(xspace, uhidden_biases[0], *uhidden_weights[0], 10, c="k", quiver_kwargs=quiver_kwargs)
+    plot_hyperplane(xspace, uhidden_biases[0], *uhidden_weights[0], 10, c="k", plot_kwargs=plot_kwargs, quiver_kwargs=quiver_kwargs)
     # plt.show()
 
 
@@ -158,7 +157,9 @@ def visualize_data_with_hidden_lines(ax: plt.Axes = None, scatter_kwargs: dict =
     artists = {}
     artists["lines"] = lines = []
     for (color, bias, weights) in zip(colors[[0, 2]], uhidden_biases, uhidden_weights):
-        _, artists_ = plot_hyperplane(xspace, bias, *weights, 10, c=color, quiver_kwargs=quiver_kwargs_, ax=ax, return_artists=True)
+        _, artists_ = plot_hyperplane(
+            xspace, bias, *weights, 10, c=color, plot_kwargs=plot_kwargs, quiver_kwargs=quiver_kwargs_, ax=ax, return_artists=True
+        )
         lines.append(artists_["line"][0])
 
     # plt.show()
@@ -178,7 +179,7 @@ def visualize_data_with_2lp_lines():
             10,
             c=color,
             quiver_kwargs=quiver_kwargs,
-            plot_kwargs={"linewidth": 4, "label": f"{class_} line"},
+            plot_kwargs={**plot_kwargs, "label": f"{class_} line"},
         )
 
     plt.legend()
@@ -188,8 +189,11 @@ circle_kwargs = {"facecolor": (0, 0, 0, 0), "edgecolor": "k"}
 unknown_point_kwargs = {"marker": "x", "c": "black", "s": 70}
 
 
-def calc_linewidth(x):
-    return max(x * 16, 2)
+def calc_linewidth(x: float) -> float:
+    """
+    x is assumed to be between 0 and 1
+    """
+    return max(x * 18, plot_kwargs["linewidth"])
 
 
 @viz_decorator("apples_oranges_pears_2lp_activations.pdf")
@@ -209,7 +213,7 @@ def visualize_2lp_activations(point: np.ndarray = None, axes: tuple[plt.Axes, pl
     visualize_data_set(False, False, scatter_kwargs={"alpha": 0.5}, ax=ax_upper)
 
     artists = {}
-    artists["scatter"] = ax_upper.scatter(*point.T, label="Unknown", **unknown_point_kwargs)
+    artists["scatter"] = ax_upper.scatter(*point.T, label="Unknown", **unknown_point_kwargs, zorder=100)
     activations = forward_sigmoid(point, u2lp_biases, u2lp_weights)[0]
 
     # Lines
@@ -394,12 +398,12 @@ def visualize_appleness_pearness_out_lines(
 
     if axes is None:
         fig, (ax_left, ax_right), artists = visualize_appleness_pearness(
-            False, False, scatter_kwargs=scatter_kwargs, quiver_kwargs_=quiver_kwargs_animation
+            False, False, scatter_kwargs=scatter_kwargs, quiver_kwargs_=quiver_kwargs_
         )
     else:
         ax_left, ax_right = axes
         fig, _, artists = visualize_appleness_pearness(
-            False, False, axes=axes, scatter_kwargs=scatter_kwargs, quiver_kwargs_=quiver_kwargs_animation
+            False, False, axes=axes, scatter_kwargs=scatter_kwargs, quiver_kwargs_=quiver_kwargs_
         )
 
     artists["hidden_lines"] = artists.pop("lines")
@@ -416,7 +420,7 @@ def visualize_appleness_pearness_out_lines(
             c=color,
             ax=ax_right,
             quiver_kwargs=quiver_kwargs_,
-            plot_kwargs={"label": label},
+            plot_kwargs={**plot_kwargs, "label": label},
             return_artists=True,
         )
         lines.append(artists_["line"][0])

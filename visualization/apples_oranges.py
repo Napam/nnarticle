@@ -13,7 +13,7 @@ project_dir = Path(__file__).resolve().parent.parent
 figures_dir = project_dir / "visualization" / "figures"
 sys.path.insert(0, str(project_dir))
 
-from utils import get_lims, plot_hyperplane, unnormalize_planes, json_to_weights, setup_pyplot_params
+from utils import get_lims, plot_hyperplane, unnormalize_planes, json_to_weights, setup_pyplot_params, quiver_kwargs, plot_kwargs
 
 logger = logging.getLogger("visualize.apples_oranges")
 
@@ -102,15 +102,7 @@ def visualize_data_set_with_unknown_point_and_line():
     xspace = torch.linspace(x_lim[0], x_lim[1], 4)
     uintercepts, uweights = unnormalize_planes(m, s, intercepts, weights)
 
-    plot_hyperplane(
-        xspace,
-        uintercepts[0],
-        uweights[0, 0],
-        uweights[0, 1],
-        6,
-        c="k",
-        quiver_kwargs={"units": "dots", "width": 2.25, "scale": 0.065, "scale_units": "dots"},
-    )
+    plot_hyperplane(xspace, uintercepts[0], uweights[0, 0], uweights[0, 1], 6, c="k", plot_kwargs=plot_kwargs, quiver_kwargs=quiver_kwargs)
 
     plt.title("Comparing apples and oranges with an unknown and a decision boundary")
 

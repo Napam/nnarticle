@@ -8,6 +8,10 @@ import numpy as np
 from matplotlib import patches
 
 
+plot_kwargs = {"linewidth": 3}
+quiver_kwargs = {"units": "dots", "width": 2.25, "scale": 0.065, "scale_units": "dots"}
+
+
 def setup_pyplot_params():
     """
     Sets pyplot params

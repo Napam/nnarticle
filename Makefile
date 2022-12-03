@@ -24,14 +24,14 @@ FIGURES = $(FIGURES_APPLES_ORANGES) $(FIGURES_APPLES_ORANGES_PEARS)
 .PHONY: all
 all: $(3LP_WEIGHTS) $(2LP_WEIGHTS) $(FIGURES)
 
-$(FIGURES): $(2LP_WEIGHTS) $(3LP_WEIGHTS)
+$(FIGURES): $(2LP_WEIGHTS) $(3LP_WEIGHTS) ./visualization/apples_oranges.py ./visualization/apples_oranges_pears.py
 	$(PYTHON) ./visualization/apples_oranges.py
 	$(PYTHON) ./visualization/apples_oranges_pears.py
 
-$(2LP_WEIGHTS): $(DATA_CSV)
+$(2LP_WEIGHTS): $(DATA_CSV) ./models/2LP.py
 	$(PYTHON) ./models/2LP.py
 
-$(3LP_WEIGHTS): $(DATA_CSV)
+$(3LP_WEIGHTS): $(DATA_CSV) ./models/3LP.py
 	$(PYTHON) ./models/3LP.py
 
 $(DATA_CSV): ./data/apples_oranges_pears.py
