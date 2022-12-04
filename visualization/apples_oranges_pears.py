@@ -20,16 +20,7 @@ project_dir = Path(__file__).resolve().parent.parent
 figures_dir = project_dir / "visualization" / "figures"
 sys.path.insert(0, str(project_dir))
 
-from utils import (
-    get_lims,
-    plot_hyperplane,
-    unnormalize_planes,
-    draw_ann,
-    setup_pyplot_params,
-    json_to_weights,
-    plot_kwargs,
-    quiver_kwargs
-)
+from utils import get_lims, plot_hyperplane, unnormalize_planes, draw_ann, setup_pyplot_params, json_to_weights, plot_kwargs, quiver_kwargs
 
 logger = logging.getLogger("visualize.apples_oranges_pears")
 
@@ -133,10 +124,22 @@ def visualize_data_set(scatter_kwargs: dict = None, ax: plt.Axes = None):
 
 @viz_decorator("apples_oranges_pears_with_apple_line.pdf")
 def visualize_data_with_apple_line():
-    visualize_data_set(False, False)
+    ax = visualize_data_set(False, False)
     plt.title("Comparing apples, oranges and pears with a single decision boundary")
 
-    plot_hyperplane(xspace, uhidden_biases[0], *uhidden_weights[0], 10, c="k", plot_kwargs=plot_kwargs, quiver_kwargs=quiver_kwargs)
+    plot_hyperplane(
+        xspace,
+        uhidden_biases[0],
+        *uhidden_weights[0],
+        10,
+        ax=ax,
+        c="k",
+        plot_kwargs={**plot_kwargs, "label": "Decision boundary"},
+        quiver_kwargs=quiver_kwargs,
+    )
+
+    ax.get_legend().remove()
+    ax.legend(loc="upper right")
     # plt.show()
 
 
@@ -156,12 +159,21 @@ def visualize_data_with_hidden_lines(ax: plt.Axes = None, scatter_kwargs: dict =
 
     artists = {}
     artists["lines"] = lines = []
-    for (color, bias, weights) in zip(colors[[0, 2]], uhidden_biases, uhidden_weights):
+    for (class_, color, bias, weights) in zip(classes, colors[[0, 2]], uhidden_biases, uhidden_weights):
         _, artists_ = plot_hyperplane(
-            xspace, bias, *weights, 10, c=color, plot_kwargs=plot_kwargs, quiver_kwargs=quiver_kwargs_, ax=ax, return_artists=True
+            xspace,
+            bias,
+            *weights,
+            10,
+            c=color,
+            plot_kwargs={**plot_kwargs, "label": f"{class_} line"},
+            quiver_kwargs=quiver_kwargs_,
+            ax=ax,
+            return_artists=True,
         )
         lines.append(artists_["line"][0])
 
+    ax.legend(loc="upper right")
     # plt.show()
     return artists
 
@@ -411,7 +423,7 @@ def visualize_appleness_pearness_out_lines(
     h1lims = get_lims(h1)
     xspace = np.linspace(*h1lims[0], 4)
     artists["out_lines"] = lines = []
-    for i, (label, color) in enumerate(zip(classes, colors)):
+    for i, (class_, color) in enumerate(zip(classes, colors)):
         _, artists_ = plot_hyperplane(
             xspace,
             output_biases[i],
@@ -420,13 +432,15 @@ def visualize_appleness_pearness_out_lines(
             c=color,
             ax=ax_right,
             quiver_kwargs=quiver_kwargs_,
-            plot_kwargs={**plot_kwargs, "label": label},
+            plot_kwargs={**plot_kwargs, "label": f"{class_} line"},
             return_artists=True,
         )
         lines.append(artists_["line"][0])
 
     ax_right.set_xlim(*h1lims[0])
     ax_right.set_ylim(*h1lims[1])
+    ax_right.legend(loc="upper right")
+
     # plt.show()
     return fig, (ax_left, ax_right), artists
 

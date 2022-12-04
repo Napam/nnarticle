@@ -102,9 +102,19 @@ def visualize_data_set_with_unknown_point_and_line():
     xspace = torch.linspace(x_lim[0], x_lim[1], 4)
     uintercepts, uweights = unnormalize_planes(m, s, intercepts, weights)
 
-    plot_hyperplane(xspace, uintercepts[0], uweights[0, 0], uweights[0, 1], 6, c="k", plot_kwargs=plot_kwargs, quiver_kwargs=quiver_kwargs)
+    plot_hyperplane(
+        xspace,
+        uintercepts[0],
+        uweights[0, 0],
+        uweights[0, 1],
+        6,
+        c="k",
+        plot_kwargs={**plot_kwargs, "label": "Decision boundary"},
+        quiver_kwargs=quiver_kwargs,
+    )
 
     plt.title("Comparing apples and oranges with an unknown and a decision boundary")
+    plt.legend()
 
     # plt.show()
 

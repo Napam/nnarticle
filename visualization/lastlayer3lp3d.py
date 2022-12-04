@@ -1,5 +1,6 @@
 import sys
 from matplotlib import pyplot as plt
+from pathlib import Path
 
 project_dir = Path(__file__).resolve().parent.parent
 visualization_dir = Path(__file__).resolve().parent
