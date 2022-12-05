@@ -37,4 +37,7 @@ Note: dataset, model weights and figures are committed to this repository so all
     1. Run the `Makefile` (`make` needs to be available on your environment). This will create all the artifacts related to this project by executing all relevant files. As the note above states the program artifacts are already present in the repository. Running `make` should not really do anything in that case. In order to re-generate all the artifacts you need to do `make clean` first which will delete all artifacts, then `make`.
 
 ### Using Docker
-If you don't want to clutter your environment with my stuff then you can run the docker file with this: `docker build -t nnarticle . && docker run --rm -it -v `pwd`:/project -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u `id -u`:`id -g` nnarticle`
+If you don't want to clutter your environment with my stuff then you can run the docker file with this: 
+```
+docker build -t nnarticle . && docker run --rm -it -v `pwd`:/project -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u `id -u`:`id -g` nnarticle`
+```
