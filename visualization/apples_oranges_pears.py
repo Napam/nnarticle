@@ -159,7 +159,7 @@ def visualize_data_with_hidden_lines(ax: plt.Axes = None, scatter_kwargs: dict =
 
     artists = {}
     artists["lines"] = lines = []
-    for (class_, color, bias, weights) in zip(classes, colors[[0, 2]], uhidden_biases, uhidden_weights):
+    for class_, color, bias, weights in zip(classes[[0, 2]], colors[[0, 2]], uhidden_biases, uhidden_weights):
         _, artists_ = plot_hyperplane(
             xspace,
             bias,
@@ -183,7 +183,7 @@ def visualize_data_with_2lp_lines():
     visualize_data_set(False, False)
     plt.title("Decision boundaries for apples, oranges and pears")
 
-    for (class_, color, bias, weights) in zip(classes, colors, u2lp_biases, u2lp_weights):
+    for class_, color, bias, weights in zip(classes, colors, u2lp_biases, u2lp_weights):
         plot_hyperplane(
             xspace,
             bias,
@@ -401,7 +401,6 @@ def visualize_appleness_pearness(axes: tuple[plt.Axes, plt.Axes] = None, scatter
 def visualize_appleness_pearness_out_lines(
     axes: tuple[plt.Axes, plt.Axes] = None, scatter_kwargs: dict = None, quiver_kwargs_: dict = None
 ):
-
     if scatter_kwargs is None:
         scatter_kwargs = {}
 
@@ -649,7 +648,6 @@ def visualize_3lp_animated():
 
 
 if __name__ == "__main__":
-
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.setLevel(logging.INFO)
 
